@@ -45,6 +45,26 @@ flutter pub add <package_name>
 - Remote: `git@github-coririri:coririri/haappen-mobile.git`
 - SSH config의 `github-coririri` 호스트 별칭을 통해 `coririri` 계정으로 인증
 
+## Branch Naming Rules
+
+```
+<type>/<short-description>
+```
+
+### Branch Types
+
+- `feat/` : 새 기능 개발
+- `fix/` : 버그 수정
+- `refactor/` : 코드 개선
+- `chore/` : 설정/유지보수
+- `docs/` : 문서
+
+### Rules
+
+- 소문자, 하이픈(`-`) 사용 (언더스코어 금지)
+- 기본 브랜치: `develop` (작업 브랜치는 `develop`에서 분기)
+- `main`은 배포용, `develop`에서 PR로만 병합
+
 
 
 ## PR Message Rules
