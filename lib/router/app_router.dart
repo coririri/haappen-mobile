@@ -31,11 +31,16 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/my-class',
-      builder: (context, state) => MyClassPage(
-        classIndex: int.tryParse(state.uri.queryParameters['classIndex'] ?? '0') ?? 0,
-        sortIndex: int.tryParse(state.uri.queryParameters['sortIndex'] ?? '0') ?? 0,
-        courseType: state.uri.queryParameters['courseType'] ?? '',
-      ),
+      builder: (context, state) {
+        final classIndex = int.tryParse(state.uri.queryParameters['classIndex'] ?? '0') ?? 0;
+        final sortIndex = int.tryParse(state.uri.queryParameters['sortIndex'] ?? '0') ?? 0;
+        final courseType = state.uri.queryParameters['courseType'] ?? '';
+        return MyClassPage(
+          classIndex: classIndex,
+          sortIndex: sortIndex,
+          courseType: courseType,
+        );
+      },
     ),
     GoRoute(
       path: '/lesson-overview',
