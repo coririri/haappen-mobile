@@ -1,9 +1,27 @@
 import 'package:haanppen_mobile/services/api_client.dart';
 
+class LoginResponse {
+  final String accessToken;
+  final String userName;
+  final String role;
+
+  const LoginResponse({
+    required this.accessToken,
+    required this.userName,
+    required this.role,
+  });
+
+  factory LoginResponse.fromJson(Map<String, dynamic> json) => LoginResponse(
+        accessToken: json['accessToken'] as String,
+        userName: json['userName'] as String,
+        role: json['role'] as String,
+      );
+}
+
 class AuthApi {
   static const _login = '/login';
 
-  static Future<String> login({
+  static Future<LoginResponse> login({
     required String id,
     required String password,
   }) async {
@@ -12,6 +30,6 @@ class AuthApi {
       body: {'userPhoneNumber': id, 'password': password},
     );
 
-    return data['accessToken'] as String;
+    return LoginResponse.fromJson(data);
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:haanppen_mobile/apis/auth_api.dart';
 import 'package:haanppen_mobile/services/api_client.dart';
+import 'package:haanppen_mobile/services/storage_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -60,9 +61,14 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      await AuthApi.login(
+      final response = await AuthApi.login(
         id: _idController.text,
         password: _passwordController.text,
+      );
+      await StorageService.saveLoginData(
+        accessToken: response.accessToken,
+        userName: response.userName,
+        role: response.role,
       );
       if (mounted) context.go('/');
     } on ApiException catch (e) {

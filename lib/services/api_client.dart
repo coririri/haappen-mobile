@@ -25,7 +25,7 @@ class ApiClient {
     if (response.statusCode >= 400) {
       throw ApiException(
         statusCode: response.statusCode,
-        message: data['message'] as String? ?? '요청에 실패했습니다.',
+        message: data['errorDescription'] as String? ?? data['message'] as String? ?? '요청에 실패했습니다.',
       );
     }
 
