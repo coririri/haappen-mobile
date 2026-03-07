@@ -20,16 +20,23 @@ class ApiClient {
       body: jsonEncode(body),
     );
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-
     if (response.statusCode >= 400) {
-      throw ApiException(
-        statusCode: response.statusCode,
-        message: data['errorDescription'] as String? ?? data['message'] as String? ?? '요청에 실패했습니다.',
-      );
+      String message = '요청에 실패했습니다.';
+      try {
+        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
+        message = errorData['errorDescription'] as String? ??
+            errorData['message'] as String? ??
+            message;
+      } catch (_) {}
+      throw ApiException(statusCode: response.statusCode, message: message);
     }
 
-    return data;
+    try {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw ApiException(
+          statusCode: response.statusCode, message: '응답 데이터를 파싱하는 데 실패했습니다.');
+    }
   }
 }
 

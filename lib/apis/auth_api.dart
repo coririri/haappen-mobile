@@ -11,11 +11,21 @@ class LoginResponse {
     required this.role,
   });
 
-  factory LoginResponse.fromJson(Map<String, dynamic> json) => LoginResponse(
-        accessToken: json['accessToken'] as String,
-        userName: json['userName'] as String,
-        role: json['role'] as String,
-      );
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    final accessToken = json['accessToken'];
+    if (accessToken is! String) {
+      throw const ApiException(statusCode: 0, message: '응답에서 액세스 토큰을 찾을 수 없습니다.');
+    }
+    final userName = json['userName'];
+    if (userName is! String) {
+      throw const ApiException(statusCode: 0, message: '응답에서 사용자 이름을 찾을 수 없습니다.');
+    }
+    final role = json['role'];
+    if (role is! String) {
+      throw const ApiException(statusCode: 0, message: '응답에서 권한 정보를 찾을 수 없습니다.');
+    }
+    return LoginResponse(accessToken: accessToken, userName: userName, role: role);
+  }
 }
 
 class AuthApi {
