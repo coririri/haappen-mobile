@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:haanppen_mobile/apis/auth_api.dart';
+import 'package:haanppen_mobile/services/api_client.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _passwordVisible = false;
   String _errorMessage = '';
   bool _hasInteracted = false;
+  bool _isLoading = false;
 
   static const _hpBlue = Color(0xFF2563EB);
   static const _hpGray = Color(0xFF9CA3AF);
@@ -51,9 +54,24 @@ class _LoginPageState extends State<LoginPage> {
     return '';
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_errorMessage.isNotEmpty) return;
-    // TODO: 로그인 API 호출
+
+    setState(() => _isLoading = true);
+
+    try {
+      await AuthApi.login(
+        id: _idController.text,
+        password: _passwordController.text,
+      );
+      if (mounted) context.go('/');
+    } on ApiException catch (e) {
+      setState(() => _errorMessage = e.message);
+    } catch (_) {
+      setState(() => _errorMessage = '네트워크 오류가 발생했습니다.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _handleFindPassword() {
@@ -76,7 +94,8 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final isButtonEnabled = _errorMessage.isEmpty &&
         _idController.text.isNotEmpty &&
-        _passwordController.text.isNotEmpty;
+        _passwordController.text.isNotEmpty &&
+        !_isLoading;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -147,14 +166,23 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      '로그인',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Text(
+                            '로그인',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
