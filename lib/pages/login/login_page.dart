@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
 
   String _phoneNumberValidation(String id) {
     if (id.isEmpty) return '아이디(전화번호)를 입력해주세요.';
-    final phoneRegex = RegExp(r'^01[0-9]{8,9}$');
+    final phoneRegex = RegExp(r'^010[0-9]{8}$');
     if (!phoneRegex.hasMatch(id)) return '올바른 전화번호 형식을 입력해주세요.';
     return '';
   }
@@ -73,8 +73,8 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) context.go('/');
     } on ApiException catch (e) {
       setState(() => _errorMessage = e.message);
-    } catch (_) {
-      setState(() => _errorMessage = '네트워크 오류가 발생했습니다.');
+    } catch (e) {
+      setState(() => _errorMessage = e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
