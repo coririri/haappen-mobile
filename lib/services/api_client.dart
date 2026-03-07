@@ -5,21 +5,12 @@ import 'package:haanppen_mobile/constants/api_constants.dart';
 class ApiClient {
   static final _client = http.Client();
 
-  static Future<Map<String, dynamic>> post(
-    String path, {
-    required Map<String, dynamic> body,
-    Map<String, String>? headers,
-  }) async {
-    final uri = Uri.parse('${ApiConstants.baseUrl}$path');
-    final response = await _client.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        ...?headers,
-      },
-      body: jsonEncode(body),
-    );
+  static Uri _buildUri(String path, {Map<String, String>? queryParams}) {
+    return Uri.parse('${ApiConstants.baseUrl}$path')
+        .replace(queryParameters: queryParams);
+  }
 
+  static Future<Map<String, dynamic>> _handleResponse(http.Response response) {
     if (response.statusCode >= 400) {
       String message = '요청에 실패했습니다.';
       try {
@@ -32,11 +23,41 @@ class ApiClient {
     }
 
     try {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return Future.value(jsonDecode(response.body) as Map<String, dynamic>);
     } catch (_) {
       throw ApiException(
           statusCode: response.statusCode, message: '응답 데이터를 파싱하는 데 실패했습니다.');
     }
+  }
+
+  static Future<Map<String, dynamic>> post(
+    String path, {
+    Map<String, dynamic> body = const {},
+    Map<String, String>? queryParams,
+    Map<String, String>? headers,
+  }) async {
+    final uri = _buildUri(path, queryParams: queryParams);
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json', ...?headers},
+      body: body.isEmpty ? null : jsonEncode(body),
+    );
+    return _handleResponse(response);
+  }
+
+  static Future<Map<String, dynamic>> put(
+    String path, {
+    Map<String, dynamic> body = const {},
+    Map<String, String>? queryParams,
+    Map<String, String>? headers,
+  }) async {
+    final uri = _buildUri(path, queryParams: queryParams);
+    final response = await _client.put(
+      uri,
+      headers: {'Content-Type': 'application/json', ...?headers},
+      body: body.isEmpty ? null : jsonEncode(body),
+    );
+    return _handleResponse(response);
   }
 }
 

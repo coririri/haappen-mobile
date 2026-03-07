@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:haanppen_mobile/apis/auth_api.dart';
+import 'package:haanppen_mobile/pages/login/find_password_modal.dart';
 import 'package:haanppen_mobile/services/api_client.dart';
 import 'package:haanppen_mobile/services/storage_service.dart';
 
@@ -83,16 +84,7 @@ class _LoginPageState extends State<LoginPage> {
   void _handleFindPassword() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('비밀번호 찾기'),
-        content: const Text('비밀번호 찾기 기능은 준비 중입니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+      builder: (context) => const FindPasswordModal(),
     );
   }
 

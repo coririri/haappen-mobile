@@ -30,6 +30,7 @@ class LoginResponse {
 
 class AuthApi {
   static const _login = '/login';
+  static const _passwordVerification = '/accounts/password/verification';
 
   static Future<LoginResponse> login({
     required String id,
@@ -41,5 +42,31 @@ class AuthApi {
     );
 
     return LoginResponse.fromJson(data);
+  }
+
+  static Future<void> sendPasswordResetCode({
+    required String phoneNumber,
+  }) async {
+    await ApiClient.post(
+      _passwordVerification,
+      queryParams: {'phoneNumber': phoneNumber},
+    );
+  }
+
+  static Future<String> verifyPasswordCode({
+    required String phoneNumber,
+    required String code,
+  }) async {
+    final data = await ApiClient.put(
+      _passwordVerification,
+      queryParams: {'phoneNumber': phoneNumber, 'verificationCode': code},
+    );
+
+    final password = data['changedPassword'];
+    if (password is! String) {
+      throw const ApiException(statusCode: 0, message: '응답에서 비밀번호를 찾을 수 없습니다.');
+    }
+
+    return password;
   }
 }
