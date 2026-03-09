@@ -110,8 +110,8 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 80),
-                Image.network(
-                  'https://www.hpmath.co.kr/images/lg_logo_image.png',
+                Image.asset(
+                  'lib/assests/haanppen_logo.png',
                   width: 220,
                 ),
                 const SizedBox(height: 48),
