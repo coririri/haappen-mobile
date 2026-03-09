@@ -44,11 +44,9 @@ class _MainHeaderState extends State<MainHeader> {
                 // 로고
                 GestureDetector(
                   onTap: () => context.go('/'),
-                  child: Image.network(
-                    'https://www.hpmath.co.kr/images/sm_logo_image.png',
+                  child: Image.asset(
+                    'lib/assests/haanppen_logo.png',
                     width: 70,
-                    errorBuilder: (_, _, _) =>
-                        const Text('hpmath', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
                 // 역할
