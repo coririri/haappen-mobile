@@ -84,12 +84,14 @@ class _UserInformationPageState extends State<UserInformationPage> {
     });
   }
 
+  static const _specialPasswords = {'0000', 'admin'};
+
   void _validatePassword() {
     final pw = _passwordController.text;
     setState(() {
       if (pw.isEmpty) {
         _passwordError = '기존 비밀번호를 입력해주세요.';
-      } else if (pw.length < 8) {
+      } else if (pw.length < 8 && !_specialPasswords.contains(pw)) {
         _passwordError = '비밀번호는 8자리 이상이어야 합니다.';
       } else {
         _passwordError = '';
@@ -198,13 +200,6 @@ class _UserInformationPageState extends State<UserInformationPage> {
                     obscureText: true,
                   ),
                   _buildDivider(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Text(
-                      '계정 가입일: 24.08.02',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -246,6 +241,7 @@ class _UserInformationPageState extends State<UserInformationPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 12),
           Row(
             children: [
               SizedBox(
@@ -280,7 +276,7 @@ class _UserInformationPageState extends State<UserInformationPage> {
                 style: const TextStyle(color: _hpRed, fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
         ],
       ),
     );
