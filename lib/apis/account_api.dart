@@ -20,11 +20,11 @@ class AccountInfo {
 }
 
 class AccountApi {
-  static const _accounts = '/accounts';
+  static const _accountsMy = '/accounts/my';
 
   static Future<AccountInfo> getMyInfo({required String accessToken}) async {
     final data = await ApiClient.get(
-      _accounts,
+      _accountsMy,
       headers: {'Authorization': 'Bearer $accessToken'},
     );
     return AccountInfo.fromJson(data);
@@ -37,12 +37,12 @@ class AccountApi {
     required String password,
     required String newPassword,
   }) async {
-    await ApiClient.put(
-      _accounts,
+    await ApiClient.patch(
+      _accountsMy,
       body: {
-        'name': name,
         'phoneNumber': phoneNumber,
-        'password': password,
+        'name': name,
+        'prevPassword': password,
         'newPassword': newPassword,
       },
       headers: {'Authorization': 'Bearer $accessToken'},
