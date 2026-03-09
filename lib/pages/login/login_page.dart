@@ -66,6 +66,10 @@ class _LoginPageState extends State<LoginPage> {
         id: _idController.text,
         password: _passwordController.text,
       );
+      if (response.role != 'STUDENT') {
+        setState(() => _errorMessage = '학생만 사용할 수 있습니다.');
+        return;
+      }
       await StorageService.saveLoginData(
         accessToken: response.accessToken,
         userName: response.userName,
@@ -106,8 +110,8 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 80),
-                Image.network(
-                  'https://www.hpmath.co.kr/images/lg_logo_image.png',
+                Image.asset(
+                  'lib/assests/haanppen_logo.png',
                   width: 220,
                 ),
                 const SizedBox(height: 48),
