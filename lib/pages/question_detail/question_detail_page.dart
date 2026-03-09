@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/main_header.dart';
 
 class QuestionDetailPage extends StatelessWidget {
   final String id;
@@ -8,7 +9,12 @@ class QuestionDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: Text('질문 상세: $id')),
+      body: Column(
+        children: [
+          const MainHeader(),
+          Expanded(child: Center(child: Text('질문 상세: $id'))),
+        ],
+      ),
     );
   }
 }

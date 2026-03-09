@@ -14,7 +14,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'haanppen',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
+        scaffoldBackgroundColor: Colors.white,
       ),
       routerConfig: appRouter,
     );

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../apis/account_api.dart';
 import '../../services/api_client.dart';
 import '../../services/storage_service.dart';
+import '../../widgets/main_header.dart';
 
 class UserInformationPage extends StatefulWidget {
   const UserInformationPage({super.key});
@@ -152,7 +153,11 @@ class _UserInformationPageState extends State<UserInformationPage> {
     }
 
     return Scaffold(
-      body: SingleChildScrollView(
+      body: Column(
+        children: [
+          const MainHeader(),
+          Expanded(
+            child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
         child: Column(
           children: [
@@ -222,6 +227,9 @@ class _UserInformationPageState extends State<UserInformationPage> {
             ),
           ],
         ),
+      ),
+          ),
+        ],
       ),
     );
   }
