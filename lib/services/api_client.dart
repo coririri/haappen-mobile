@@ -30,6 +30,19 @@ class ApiClient {
     }
   }
 
+  static Future<Map<String, dynamic>> get(
+    String path, {
+    Map<String, String>? queryParams,
+    Map<String, String>? headers,
+  }) async {
+    final uri = _buildUri(path, queryParams: queryParams);
+    final response = await _client.get(
+      uri,
+      headers: {'Content-Type': 'application/json', ...?headers},
+    );
+    return _handleResponse(response);
+  }
+
   static Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic> body = const {},

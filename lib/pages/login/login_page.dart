@@ -66,6 +66,10 @@ class _LoginPageState extends State<LoginPage> {
         id: _idController.text,
         password: _passwordController.text,
       );
+      if (response.role != 'STUDENT') {
+        setState(() => _errorMessage = '학생만 사용할 수 있습니다.');
+        return;
+      }
       await StorageService.saveLoginData(
         accessToken: response.accessToken,
         userName: response.userName,
