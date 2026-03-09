@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:haanppen_mobile/constants/api_constants.dart';
+import 'auth_service.dart';
 
 class ApiClient {
   static final _client = http.Client();
@@ -12,6 +13,9 @@ class ApiClient {
 
   static Future<Map<String, dynamic>> _handleResponse(http.Response response) {
     if (response.statusCode >= 400) {
+      if (response.statusCode == 401) {
+        AuthService.instance.logout();
+      }
       String message = '요청에 실패했습니다.';
       try {
         final errorData = jsonDecode(response.body) as Map<String, dynamic>;

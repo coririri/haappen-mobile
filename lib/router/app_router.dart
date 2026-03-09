@@ -7,9 +7,21 @@ import 'package:haanppen_mobile/pages/privacy/privacy_page.dart';
 import 'package:haanppen_mobile/pages/question_board/question_board_page.dart';
 import 'package:haanppen_mobile/pages/question_detail/question_detail_page.dart';
 import 'package:haanppen_mobile/pages/user_information/user_information_page.dart';
+import 'package:haanppen_mobile/services/auth_service.dart';
+import 'package:haanppen_mobile/services/storage_service.dart';
+
+const _publicRoutes = {'/login', '/privacy'};
 
 final appRouter = GoRouter(
   initialLocation: '/',
+  refreshListenable: AuthService.instance,
+  redirect: (context, state) async {
+    final path = state.matchedLocation;
+    if (_publicRoutes.contains(path)) return null;
+    final token = await StorageService.getAccessToken();
+    if (token == null) return '/login';
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/login',
