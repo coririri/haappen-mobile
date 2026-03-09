@@ -24,6 +24,7 @@ class _UserInformationPageState extends State<UserInformationPage> {
   String _newPasswordError = '';
   bool _isLoading = true;
   bool _isSaving = false;
+  String _loadError = '';
 
   static const _hpRed = Color(0xFFEF4444);
 
@@ -66,7 +67,10 @@ class _UserInformationPageState extends State<UserInformationPage> {
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() {
+        _isLoading = false;
+        _loadError = '정보를 불러오지 못했습니다.';
+      });
     }
   }
 
@@ -152,6 +156,37 @@ class _UserInformationPageState extends State<UserInformationPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_loadError.isNotEmpty) {
+      return Scaffold(
+        body: Column(
+          children: [
+            const MainHeader(),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_loadError, style: const TextStyle(color: _hpRed, fontSize: 16)),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isLoading = true;
+                          _loadError = '';
+                        });
+                        _loadUserInfo();
+                      },
+                      child: const Text('다시 시도'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return Scaffold(
