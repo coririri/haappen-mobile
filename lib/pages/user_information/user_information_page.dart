@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/main_header.dart';
 
 class UserInformationPage extends StatelessWidget {
   const UserInformationPage({super.key});
@@ -6,7 +7,12 @@ class UserInformationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: Text('사용자 정보 수정')),
+      body: Column(
+        children: [
+          MainHeader(),
+          Expanded(child: Center(child: Text('사용자 정보 수정'))),
+        ],
+      ),
     );
   }
 }

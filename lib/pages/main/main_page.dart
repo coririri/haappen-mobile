@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/main_header.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
@@ -6,7 +7,12 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: Text('메인 페이지')),
+      body: Column(
+        children: [
+          MainHeader(),
+          Expanded(child: Center(child: Text('메인 페이지'))),
+        ],
+      ),
     );
   }
 }
