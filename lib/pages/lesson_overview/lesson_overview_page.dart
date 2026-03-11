@@ -6,11 +6,11 @@ class LessonOverviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Column(
         children: [
-          MainHeader(),
-          Expanded(child: Center(child: Text('강의 개요'))),
+          const MainHeader(),
+          const Expanded(child: Center(child: Text('강좌 목록'))),
         ],
       ),
     );
