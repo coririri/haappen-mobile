@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:haanppen_mobile/apis/auth_api.dart';
 import 'package:haanppen_mobile/pages/login/find_password_modal.dart';
 import 'package:haanppen_mobile/services/api_client.dart';
+import 'package:haanppen_mobile/services/auth_service.dart';
 import 'package:haanppen_mobile/services/storage_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -57,6 +58,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
+    _validate();
     if (_errorMessage.isNotEmpty) return;
 
     setState(() => _isLoading = true);
@@ -75,6 +77,7 @@ class _LoginPageState extends State<LoginPage> {
         userName: response.userName,
         role: response.role,
       );
+      AuthService.instance.setLoggedIn();
       if (mounted) context.go('/');
     } on ApiException catch (e) {
       setState(() => _errorMessage = e.message);

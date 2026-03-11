@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:haanppen_mobile/router/app_router.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
