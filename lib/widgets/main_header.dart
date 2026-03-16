@@ -76,7 +76,7 @@ class _MainHeaderState extends State<MainHeader> {
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEFF6FF),
-                      border: Border.all(color: kPrimaryBlue.withValues(alpha: 0.3), width: 1.5),
+                      border: Border.all(color: kPrimaryBlue.withOpacity(0.3), width: 1.5),
                       borderRadius: BorderRadius.circular(40),
                     ),
                     child: Row(
