@@ -1,4 +1,5 @@
 import 'package:haanppen_mobile/models/question.dart';
+import 'package:haanppen_mobile/models/teacher.dart';
 import 'package:haanppen_mobile/services/api_client.dart';
 import 'package:haanppen_mobile/services/storage_service.dart';
 
@@ -38,5 +39,33 @@ class QuestionApi {
     final pageInfo = QuestionPageInfo.fromJson(
         res['pageInfo'] as Map<String, dynamic>);
     return (questions: questions, pageInfo: pageInfo);
+  }
+
+  static Future<List<Teacher>> getAllTeachers() async {
+    final token = await StorageService.getAccessToken();
+    final data = await ApiClient.getList(
+      '/members/teachers/all',
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return data.map((e) => Teacher.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  static Future<void> writeQuestion({
+    required String title,
+    required String content,
+    required List<String> images,
+    int? targetMemberId,
+  }) async {
+    final token = await StorageService.getAccessToken();
+    await ApiClient.post(
+      '/board/questions',
+      body: {
+        'title': title,
+        'content': content,
+        'images': images,
+        'targetMemberId': targetMemberId,
+      },
+      headers: {'Authorization': 'Bearer $token'},
+    );
   }
 }
