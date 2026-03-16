@@ -34,7 +34,9 @@ class _MainPageState extends State<MainPage> {
     try {
       final banners = await NoticeBannerApi.getNoticeBanners();
       if (mounted) setState(() => _banners = banners);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('공지사항 로드 실패: $e');
+    }
   }
 
   Future<void> _loadMonthlyCourses(DateTime month) async {
@@ -42,7 +44,9 @@ class _MainPageState extends State<MainPage> {
       final monthInfo = DateFormat('yyyy-MM-dd').format(month);
       final courses = await CourseApi.getMonthlyCourses(monthInfo);
       if (mounted) setState(() => _monthlyCourses = courses);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('강의 목록 로드 실패: $e');
+    }
   }
 
   List<CourseMemo> get _selectedCourses {
@@ -91,7 +95,7 @@ class _MainPageState extends State<MainPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -116,7 +120,7 @@ class _MainPageState extends State<MainPage> {
         },
         calendarStyle: CalendarStyle(
           todayDecoration: BoxDecoration(
-            color: kPrimaryBlue.withOpacity(0.12),
+            color: kPrimaryBlue.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(8),
           ),
           todayTextStyle: const TextStyle(
@@ -157,7 +161,7 @@ class _MainPageState extends State<MainPage> {
                 margin: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   color: isHovered
-                      ? kPrimaryBlue.withOpacity(0.08)
+                      ? kPrimaryBlue.withValues(alpha: 0.08)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -226,7 +230,7 @@ class _MainPageState extends State<MainPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -270,7 +274,7 @@ class _MainPageState extends State<MainPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
