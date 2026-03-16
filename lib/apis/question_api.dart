@@ -1,4 +1,5 @@
 import 'package:haanppen_mobile/models/question.dart';
+import 'package:haanppen_mobile/models/question_detail.dart';
 import 'package:haanppen_mobile/models/teacher.dart';
 import 'package:haanppen_mobile/services/api_client.dart';
 import 'package:haanppen_mobile/services/storage_service.dart';
@@ -64,6 +65,87 @@ class QuestionApi {
         'content': content,
         'images': images,
         'targetMemberId': targetMemberId,
+      },
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  static Future<QuestionDetail> getQuestionDetail(int id) async {
+    final token = await StorageService.getAccessToken();
+    final res = await ApiClient.get(
+      '/board/questions/$id',
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return QuestionDetail.fromJson(res);
+  }
+
+  static Future<void> deleteQuestion(int id) async {
+    final token = await StorageService.getAccessToken();
+    await ApiClient.delete(
+      '/board/questions/$id',
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  static Future<void> modifyQuestion({
+    required int id,
+    required String title,
+    required String content,
+    required List<String> existingImagePaths,
+    required List<String> newImagePaths,
+    int? targetMemberId,
+  }) async {
+    final token = await StorageService.getAccessToken();
+    final body = <String, dynamic>{
+      'questionId': id,
+      'title': title,
+      'content': content,
+      'imageSources': [...existingImagePaths, ...newImagePaths],
+    };
+    if (targetMemberId != null && targetMemberId != -1) {
+      body['targetMemberId'] = targetMemberId;
+    }
+    await ApiClient.put(
+      '/board/questions',
+      body: body,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  static Future<void> writeComment({
+    required int questionId,
+    required String content,
+    required List<String> images,
+  }) async {
+    final token = await StorageService.getAccessToken();
+    await ApiClient.post(
+      '/board/comments',
+      body: {'questionId': questionId, 'content': content, 'images': images},
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  static Future<void> deleteComment(int commentId) async {
+    final token = await StorageService.getAccessToken();
+    await ApiClient.delete(
+      '/board/comments/$commentId',
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  static Future<void> modifyComment({
+    required int commentId,
+    required String content,
+    required List<String> existingImagePaths, // 기존 유지할 이미지 경로
+    required List<String> newImagePaths,      // 새로 업로드된 이미지 경로
+  }) async {
+    final token = await StorageService.getAccessToken();
+    await ApiClient.put(
+      '/board/comments',
+      body: {
+        'commentId': commentId,
+        'content': content,
+        'imageSources': [...existingImagePaths, ...newImagePaths],
       },
       headers: {'Authorization': 'Bearer $token'},
     );
