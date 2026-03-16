@@ -48,6 +48,35 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  static Future<List<dynamic>> getList(
+    String path, {
+    Map<String, String>? queryParams,
+    Map<String, String>? headers,
+  }) async {
+    final uri = _buildUri(path, queryParams: queryParams);
+    final response = await _client.get(
+      uri,
+      headers: {'Content-Type': 'application/json', ...?headers},
+    );
+    if (response.statusCode >= 400) {
+      if (response.statusCode == 401) AuthService.instance.logout();
+      String message = '요청에 실패했습니다.';
+      try {
+        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
+        message = errorData['errorDescription'] as String? ??
+            errorData['message'] as String? ??
+            message;
+      } catch (_) {}
+      throw ApiException(statusCode: response.statusCode, message: message);
+    }
+    try {
+      return jsonDecode(response.body) as List<dynamic>;
+    } catch (_) {
+      throw ApiException(
+          statusCode: response.statusCode, message: '응답 데이터를 파싱하는 데 실패했습니다.');
+    }
+  }
+
   static Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic> body = const {},

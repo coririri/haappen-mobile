@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:haanppen_mobile/pages/lesson/lesson_page.dart';
 import 'package:haanppen_mobile/pages/lesson_overview/lesson_overview_page.dart';
 import 'package:haanppen_mobile/pages/login/login_page.dart';
 import 'package:haanppen_mobile/pages/main/main_page.dart';
@@ -55,6 +56,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/lesson-overview',
       builder: (context, state) => const LessonOverviewPage(),
+    ),
+    GoRoute(
+      path: '/lesson',
+      builder: (context, state) => LessonPage(
+        courseId: int.tryParse(state.uri.queryParameters['courseId'] ?? '') ?? 0,
+        date: state.uri.queryParameters['date'] ?? '',
+      ),
     ),
     GoRoute(
       path: '/user-information',
