@@ -91,7 +91,7 @@ class _MainPageState extends State<MainPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -116,7 +116,7 @@ class _MainPageState extends State<MainPage> {
         },
         calendarStyle: CalendarStyle(
           todayDecoration: BoxDecoration(
-            color: kPrimaryBlue.withValues(alpha: 0.12),
+            color: kPrimaryBlue.withOpacity(0.12),
             borderRadius: BorderRadius.circular(8),
           ),
           todayTextStyle: const TextStyle(
@@ -157,7 +157,7 @@ class _MainPageState extends State<MainPage> {
                 margin: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   color: isHovered
-                      ? kPrimaryBlue.withValues(alpha: 0.08)
+                      ? kPrimaryBlue.withOpacity(0.08)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -226,7 +226,7 @@ class _MainPageState extends State<MainPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -270,7 +270,7 @@ class _MainPageState extends State<MainPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
