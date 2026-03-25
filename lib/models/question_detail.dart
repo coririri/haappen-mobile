@@ -31,7 +31,7 @@ class QuestionDetail {
         .toList();
 
     return QuestionDetail(
-      questionId: json['questionId'] as int? ?? 0,
+      questionId: json['questionId'] as int,
       title: json['title'] as String,
       content: json['content'] as String,
       rawImagePaths: rawPaths,

@@ -31,8 +31,9 @@ class ApiClient {
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) return Future.value(decoded);
       return Future.value(<String, dynamic>{});
-    } catch (_) {
-      return Future.value(<String, dynamic>{});
+    } catch (e) {
+      throw ApiException(
+          statusCode: response.statusCode, message: '응답 데이터 파싱에 실패했습니다: $e');
     }
   }
 
