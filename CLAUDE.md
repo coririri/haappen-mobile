@@ -44,6 +44,7 @@ flutter pub add <package_name>
 
 - Remote: `git@github-coririri:coririri/haappen-mobile.git`
 - SSH config의 `github-coririri` 호스트 별칭을 통해 `coririri` 계정으로 인증
+- GitHub CLI 경로: `C:\Program Files\GitHub CLI\gh.exe`
 
 ## Branch Naming Rules
 
