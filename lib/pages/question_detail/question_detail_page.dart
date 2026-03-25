@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:haanppen_mobile/apis/media_api.dart';
 import 'package:haanppen_mobile/apis/question_api.dart';
+import 'package:haanppen_mobile/models/question.dart';
 import 'package:haanppen_mobile/models/question_detail.dart';
 import 'package:haanppen_mobile/services/api_client.dart';
 import 'package:haanppen_mobile/services/storage_service.dart';
@@ -291,8 +292,7 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
 
   // ── 작성자 바 ────────────────────────────────────────────
   Widget _buildAuthorBar(QuestionDetail d) {
-    final grade = (d.registeredMember.memberGrade ?? 0) + 1;
-    final gradeText = _gradeLabel(grade);
+    final gradeText = _gradeLabel(d.registeredMember);
     final dateText = _formatDate(d.registeredDateTime);
 
     return Container(
@@ -663,7 +663,9 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
                 const BorderSide(color: _kBlue, width: 1.5)),
       );
 
-  String _gradeLabel(int grade) {
+  String _gradeLabel(QuestionMember member) {
+    if (member.role == 'teacher') return '선생님';
+    final grade = (member.memberGrade ?? 0) + 1;
     if (grade <= 6) return '초$grade';
     if (grade <= 9) return '중${grade - 6}';
     return '고${grade - 9}';
@@ -839,12 +841,14 @@ class _CommentCardState extends State<_CommentCard> {
   @override
   Widget build(BuildContext context) {
     final c = widget.comment;
-    final grade = (c.registeredMember.memberGrade ?? 0) + 1;
-    final gradeText = grade <= 6
-        ? '초$grade'
-        : grade <= 9
-            ? '중${grade - 6}'
-            : '고${grade - 9}';
+    final gradeText = c.registeredMember.role == 'teacher'
+        ? '선생님'
+        : () {
+            final grade = (c.registeredMember.memberGrade ?? 0) + 1;
+            if (grade <= 6) return '초$grade';
+            if (grade <= 9) return '중${grade - 6}';
+            return '고${grade - 9}';
+          }();
     String dateText = '';
     try {
       final d = DateTime.parse(c.registeredDateTime);

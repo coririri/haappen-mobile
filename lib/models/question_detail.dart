@@ -69,7 +69,7 @@ class QuestionComment {
   });
 
   factory QuestionComment.fromJson(Map<String, dynamic> json) {
-    final rawPaths = (json['imageUrls'] as List<dynamic>? ?? [])
+    final rawPaths = (json['images'] as List<dynamic>? ?? [])
         .map((e) => (e as Map<String, dynamic>)['imageUrl'] as String? ?? '')
         .where((p) => p.isNotEmpty)
         .toList();
@@ -79,7 +79,7 @@ class QuestionComment {
       content: json['content'] as String,
       registeredDateTime: json['registeredDateTime'] as String,
       registeredMember: QuestionMember.fromJson(
-          json['registeredMember'] as Map<String, dynamic>),
+          json['registeredMemberDetails'] as Map<String, dynamic>),
       imageUrls: rawPaths.map(MediaApi.imageUrl).toList(),
       rawImagePaths: rawPaths,
     );
