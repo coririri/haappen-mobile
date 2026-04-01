@@ -4,6 +4,7 @@ import 'package:haanppen_mobile/apis/course_api.dart';
 import 'package:haanppen_mobile/models/course.dart';
 import 'package:haanppen_mobile/widgets/main_header.dart';
 
+
 const _kBlue = Color(0xFF3B82F6);
 const _kPageSize = 8;
 
@@ -25,7 +26,7 @@ class MyClassPage extends StatefulWidget {
 
 class _MyClassPageState extends State<MyClassPage> {
   List<Course> _courseList = [];
-  int _selectedClassIndex = 0;
+  int _selectedClassIndex = -1; // -1 = 미선택
   int _selectedSortIndex = 0;
   bool _sortAsc = false; // 날짜 기본: 내림차순
   List<Lesson> _lessons = [];
@@ -56,7 +57,8 @@ class _MyClassPageState extends State<MyClassPage> {
       final online = results[1];
       if (mounted) {
         setState(() => _courseList = [...offline, ...online]);
-        await _loadLessons();
+        // 외부에서 classIndex가 넘어온 경우에만 자동 로드
+        if (_selectedClassIndex >= 0) await _loadLessons();
       }
     } catch (e) {
       debugPrint('강의 목록 로드 실패: $e');
@@ -102,7 +104,11 @@ class _MyClassPageState extends State<MyClassPage> {
     }
   }
 
-  void _onClassChanged(int index) {
+  void _onClassChanged(BuildContext context, int index) {
+    final courseType = _courseList[index].type;
+    context.go(
+      '/my-class?classIndex=$index&sortIndex=$_selectedSortIndex&courseType=$courseType',
+    );
     setState(() {
       _selectedClassIndex = index;
       _page = 0;
@@ -134,7 +140,9 @@ class _MyClassPageState extends State<MyClassPage> {
       (_pageInfo.totalItemSize / _kPageSize).ceil().clamp(1, 999);
 
   String get _currentType =>
-      _courseList.isEmpty ? '' : _courseList[_selectedClassIndex].type;
+      (_courseList.isEmpty || _selectedClassIndex < 0)
+          ? ''
+          : _courseList[_selectedClassIndex].type;
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +197,15 @@ class _MyClassPageState extends State<MyClassPage> {
         children: [
           _buildCourseDropdown(),
           const SizedBox(height: 12),
-          if (_currentType == 'offline') ...[
+          if (_selectedClassIndex < 0) ...[
+            const SizedBox(height: 60),
+            const Icon(Icons.menu_book_outlined, size: 48, color: Color(0xFFD1D5DB)),
+            const SizedBox(height: 16),
+            const Text(
+              '강의를 선택해주세요',
+              style: TextStyle(fontSize: 16, color: Color(0xFF9CA3AF)),
+            ),
+          ] else if (_currentType == 'offline') ...[
             _isLessonLoading
                 ? const SizedBox(
                     height: 200,
@@ -222,8 +238,10 @@ class _MyClassPageState extends State<MyClassPage> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
-          value: _selectedClassIndex,
+          value: _selectedClassIndex < 0 ? null : _selectedClassIndex,
           isExpanded: true,
+          hint: const Text('강의 선택',
+              style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF))),
           style: const TextStyle(fontSize: 14, color: Color(0xFF111827)),
           items: List.generate(
             _courseList.length,
@@ -258,7 +276,7 @@ class _MyClassPageState extends State<MyClassPage> {
             ),
           ),
           onChanged: (v) {
-            if (v != null) _onClassChanged(v);
+            if (v != null) _onClassChanged(context, v);
           },
         ),
       ),
@@ -467,7 +485,6 @@ class _MyClassPageState extends State<MyClassPage> {
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
-                    SizedBox(width: 56),
                   ],
                 ),
               ),
@@ -553,45 +570,44 @@ class _LessonRowState extends State<_LessonRow> {
         ),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
-          color: _hovered ? _kBlue.withValues(alpha: 0.05) : Colors.white,
-          padding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-          child: Column(
+          decoration: BoxDecoration(
+            color: _hovered ? _kBlue.withValues(alpha: 0.05) : Colors.white,
+            border: const Border(
+              bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  SizedBox(
-                    width: 100,
-                    child: Text(
-                      dateStr,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: _kBlue, width: 1.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        widget.lesson.progressed,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: _kBlue),
-                      ),
-                    ),
-                  ),
-                ],
+              SizedBox(
+                width: 100,
+                child: Text(
+                  dateStr,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.bold),
+                ),
               ),
-              const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: _kBlue, width: 1.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    widget.lesson.progressed,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: _kBlue),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -652,63 +668,43 @@ class _VideoRowState extends State<_VideoRow> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        color: _hovered ? _kBlue.withValues(alpha: 0.05) : Colors.white,
-        padding:
-            const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _displayName,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                SizedBox(
-                  width: 72,
-                  child: Text(
-                    widget.video.duration != null
-                        ? _secondToTime(widget.video.duration!)
-                        : '00:00:00',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-                SizedBox(
-                  width: 56,
-                  child: GestureDetector(
-                    onTap: () => context.go(
-                      '/online-lesson?onlineCourseId=${widget.onlineCourseId}&videoId=${widget.video.videoId}&courseName=${Uri.encodeComponent(widget.courseName)}',
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: _kBlue, width: 1.5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Play',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: _kBlue),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+      child: GestureDetector(
+        onTap: () => context.go(
+          '/online-lesson?onlineCourseId=${widget.onlineCourseId}&videoId=${widget.video.videoId}&courseName=${Uri.encodeComponent(widget.courseName)}',
+        ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          decoration: BoxDecoration(
+            color: _hovered ? _kBlue.withValues(alpha: 0.05) : Colors.white,
+            border: const Border(
+              bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1),
             ),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
-          ],
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _displayName,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+              SizedBox(
+                width: 72,
+                child: Text(
+                  widget.video.duration != null
+                      ? _secondToTime(widget.video.duration!)
+                      : '00:00:00',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

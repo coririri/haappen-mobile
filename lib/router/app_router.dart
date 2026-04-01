@@ -8,6 +8,7 @@ import 'package:haanppen_mobile/pages/privacy/privacy_page.dart';
 import 'package:haanppen_mobile/pages/question_board/question_board_page.dart';
 import 'package:haanppen_mobile/pages/write_question/write_question_page.dart';
 import 'package:haanppen_mobile/pages/question_detail/question_detail_page.dart';
+import 'package:haanppen_mobile/pages/online_lesson/online_lesson_page.dart';
 import 'package:haanppen_mobile/pages/user_information/user_information_page.dart';
 import 'package:haanppen_mobile/services/auth_service.dart';
 
@@ -48,7 +49,7 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/my-class',
       builder: (context, state) {
-        final classIndex = int.tryParse(state.uri.queryParameters['classIndex'] ?? '0') ?? 0;
+        final classIndex = int.tryParse(state.uri.queryParameters['classIndex'] ?? '-1') ?? -1;
         final sortIndex = int.tryParse(state.uri.queryParameters['sortIndex'] ?? '0') ?? 0;
         final courseType = state.uri.queryParameters['courseType'] ?? '';
         return MyClassPage(
@@ -67,6 +68,14 @@ final appRouter = GoRouter(
       builder: (context, state) => LessonPage(
         courseId: int.tryParse(state.uri.queryParameters['courseId'] ?? '') ?? 0,
         date: state.uri.queryParameters['date'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/online-lesson',
+      builder: (context, state) => OnlineLessonPage(
+        onlineCourseId: int.tryParse(state.uri.queryParameters['onlineCourseId'] ?? '') ?? 0,
+        videoId: int.tryParse(state.uri.queryParameters['videoId'] ?? '') ?? 0,
+        courseName: state.uri.queryParameters['courseName'] ?? '',
       ),
     ),
     GoRoute(
