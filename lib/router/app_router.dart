@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:haanppen_mobile/pages/lesson/lesson_page.dart';
 import 'package:haanppen_mobile/pages/lesson_overview/lesson_overview_page.dart';
+import 'package:haanppen_mobile/pages/preview_class/preview_class_page.dart';
 import 'package:haanppen_mobile/pages/login/login_page.dart';
 import 'package:haanppen_mobile/pages/main/main_page.dart';
 import 'package:haanppen_mobile/pages/my_class/my_class_page.dart';
@@ -62,6 +63,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/lesson-overview',
       builder: (context, state) => const LessonOverviewPage(),
+    ),
+    GoRoute(
+      path: '/preview-class',
+      builder: (context, state) => PreviewClassPage(
+        teacherName: state.uri.queryParameters['teacherName'] ?? '',
+        onlineCourseId:
+            int.tryParse(state.uri.queryParameters['onlineCourseId'] ?? '') ?? 0,
+      ),
     ),
     GoRoute(
       path: '/lesson',
