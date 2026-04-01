@@ -12,7 +12,7 @@ class _NavItem {
 }
 
 const _navItems = [
-  _NavItem('내 강의', '📚', '/my-class?classIndex=0&sortIndex=0'),
+  _NavItem('내 강의', '📚', '/my-class'),
   _NavItem('질문', '❓', '/question-board'),
   _NavItem('강좌', '🎓', '/lesson-overview'),
 ];
