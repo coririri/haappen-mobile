@@ -6,6 +6,7 @@ import 'package:haanppen_mobile/pages/main/main_page.dart';
 import 'package:haanppen_mobile/pages/my_class/my_class_page.dart';
 import 'package:haanppen_mobile/pages/privacy/privacy_page.dart';
 import 'package:haanppen_mobile/pages/question_board/question_board_page.dart';
+import 'package:haanppen_mobile/pages/write_question/write_question_page.dart';
 import 'package:haanppen_mobile/pages/question_detail/question_detail_page.dart';
 import 'package:haanppen_mobile/pages/user_information/user_information_page.dart';
 import 'package:haanppen_mobile/services/auth_service.dart';
@@ -33,6 +34,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/question-board',
       builder: (context, state) => const QuestionBoardPage(),
+    ),
+    GoRoute(
+      path: '/write-question',
+      builder: (context, state) => const WriteQuestionPage(),
     ),
     GoRoute(
       path: '/question/:id',

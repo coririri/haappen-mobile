@@ -28,10 +28,12 @@ class ApiClient {
 
     if (response.body.isEmpty) return Future.value(<String, dynamic>{});
     try {
-      return Future.value(jsonDecode(response.body) as Map<String, dynamic>);
-    } catch (_) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) return Future.value(decoded);
+      return Future.value(<String, dynamic>{});
+    } catch (e) {
       throw ApiException(
-          statusCode: response.statusCode, message: '응답 데이터를 파싱하는 데 실패했습니다.');
+          statusCode: response.statusCode, message: '응답 데이터 파싱에 실패했습니다: $e');
     }
   }
 
@@ -74,6 +76,28 @@ class ApiClient {
     } catch (_) {
       throw ApiException(
           statusCode: response.statusCode, message: '응답 데이터를 파싱하는 데 실패했습니다.');
+    }
+  }
+
+  static Future<void> delete(
+    String path, {
+    Map<String, String>? headers,
+  }) async {
+    final uri = _buildUri(path);
+    final response = await _client.delete(
+      uri,
+      headers: {'Content-Type': 'application/json', ...?headers},
+    );
+    if (response.statusCode >= 400) {
+      if (response.statusCode == 401) AuthService.instance.logout();
+      String message = '요청에 실패했습니다.';
+      try {
+        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
+        message = errorData['errorDescription'] as String? ??
+            errorData['message'] as String? ??
+            message;
+      } catch (_) {}
+      throw ApiException(statusCode: response.statusCode, message: message);
     }
   }
 
