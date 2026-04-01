@@ -105,6 +105,7 @@ class OnlineVideo {
   final int videoSequence;
   final String mediaName;
   final String mediaSrc;
+  final bool isPreview;
   final int? duration;
   final List<AttachmentDetail> attachmentDetails;
 
@@ -113,6 +114,7 @@ class OnlineVideo {
     required this.videoSequence,
     required this.mediaName,
     required this.mediaSrc,
+    this.isPreview = false,
     this.duration,
     this.attachmentDetails = const [],
   });
@@ -122,6 +124,7 @@ class OnlineVideo {
         videoSequence: json['videoSequence'] as int,
         mediaName: json['mediaName'] as String,
         mediaSrc: json['mediaSrc'] as String? ?? '',
+        isPreview: json['isPreview'] as bool? ?? false,
         duration: json['duration'] as int?,
         attachmentDetails:
             (json['attachmentDetails'] as List<dynamic>? ?? [])
