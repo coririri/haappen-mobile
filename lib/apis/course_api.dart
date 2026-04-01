@@ -1,4 +1,5 @@
 import '../models/course.dart';
+import '../models/lesson_detail.dart';
 import '../services/api_client.dart';
 import '../services/storage_service.dart';
 
@@ -87,5 +88,18 @@ class CourseApi {
       headers: {'Authorization': 'Bearer $token'},
     );
     return OnlineLessonInfo.fromJson(res);
+  }
+
+  static Future<LessonDetail> getLessonByDateAndCourse({
+    required int courseId,
+    required String localDate,
+  }) async {
+    final token = await StorageService.getAccessToken();
+    final res = await ApiClient.get(
+      '/courses/memos',
+      queryParams: {'courseId': '$courseId', 'localDate': localDate},
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    return LessonDetail.fromJson(res);
   }
 }

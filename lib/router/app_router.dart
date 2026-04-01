@@ -68,6 +68,7 @@ final appRouter = GoRouter(
       builder: (context, state) => LessonPage(
         courseId: int.tryParse(state.uri.queryParameters['courseId'] ?? '') ?? 0,
         date: state.uri.queryParameters['date'] ?? '',
+        courseName: state.uri.queryParameters['courseName'] ?? '',
       ),
     ),
     GoRoute(
