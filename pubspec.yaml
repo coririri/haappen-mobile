@@ -68,7 +68,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - lib/assests/haanppen_logo.png
+    - lib/assets/haanppen_logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

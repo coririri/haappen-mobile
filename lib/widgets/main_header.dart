@@ -57,7 +57,7 @@ class _MainHeaderState extends State<MainHeader> {
                 GestureDetector(
                   onTap: () => context.go('/'),
                   child: Image.asset(
-                    'lib/assests/haanppen_logo.png',
+                    'lib/assets/haanppen_logo.png',
                     width: 70,
                   ),
                 ),

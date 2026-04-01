@@ -46,6 +46,22 @@ class _MyClassPageState extends State<MyClassPage> {
     _loadCourses();
   }
 
+  @override
+  void didUpdateWidget(MyClassPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.classIndex != widget.classIndex ||
+        oldWidget.sortIndex != widget.sortIndex) {
+      setState(() {
+        _selectedClassIndex = widget.classIndex;
+        _selectedSortIndex = widget.sortIndex;
+        _page = 0;
+        _onlineLessonInfo = null;
+        _isInfoOpen = false;
+      });
+      if (widget.classIndex >= 0) _loadLessons();
+    }
+  }
+
   Future<void> _loadCourses() async {
     setState(() => _isLoading = true);
     try {
@@ -106,16 +122,16 @@ class _MyClassPageState extends State<MyClassPage> {
 
   void _onClassChanged(BuildContext context, int index) {
     final courseType = _courseList[index].type;
-    context.go(
-      '/my-class?classIndex=$index&sortIndex=$_selectedSortIndex&courseType=$courseType',
-    );
     setState(() {
       _selectedClassIndex = index;
       _page = 0;
       _onlineLessonInfo = null;
       _isInfoOpen = false;
     });
-    _loadLessons();
+    context.go(
+      '/my-class?classIndex=$index&sortIndex=$_selectedSortIndex&courseType=$courseType',
+    );
+    // _loadLessons()는 didUpdateWidget에서 URL 변경을 감지해 호출됨
   }
 
   void _onSortChanged(int index) {
