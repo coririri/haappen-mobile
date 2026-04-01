@@ -5,7 +5,9 @@ import '../../models/course.dart';
 import '../../widgets/main_header.dart';
 
 const _kBlue = Color(0xFF3B82F6);
-const _kGray = Color(0xFF6B7280);
+const _kGray = Color(0xFF64748B);
+const _kBg = Color(0xFFF8FAFC);
+const _kBorder = Color(0xFFE2E8F0);
 
 class PreviewClassPage extends StatefulWidget {
   final String teacherName;
@@ -35,8 +37,7 @@ class _PreviewClassPageState extends State<PreviewClassPage> {
 
   Future<void> _load() async {
     try {
-      final lesson =
-          await CourseApi.getOnlineLessonDetail(widget.onlineCourseId);
+      final lesson = await CourseApi.getOnlineLessonDetail(widget.onlineCourseId);
       if (mounted) setState(() { _lesson = lesson; _loading = false; });
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
@@ -53,7 +54,7 @@ class _PreviewClassPageState extends State<PreviewClassPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _kBg,
       body: Column(
         children: [
           const MainHeader(),
@@ -76,218 +77,140 @@ class _PreviewClassPageState extends State<PreviewClassPage> {
 
   Widget _buildBody() {
     final lesson = _lesson!;
+    final sorted = lesson.videos.toList()
+      ..sort((a, b) => a.videoSequence.compareTo(b.videoSequence));
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 뒤로가기
-            GestureDetector(
-              onTap: () => context.canPop() ? context.pop() : context.go('/lesson-overview'),
-              child: const Row(
-                children: [
-                  Icon(Icons.arrow_back_ios, size: 16, color: _kGray),
-                  SizedBox(width: 4),
-                  Text('목록으로', style: TextStyle(fontSize: 14, color: _kGray)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // 강의 제목
-            Text(
-              lesson.title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 10),
-
-            // 강의 정보 아코디언
-            _buildAccordion(lesson),
-            const SizedBox(height: 8),
-
-            // 영상 목록 헤더
-            Container(
-              color: const Color(0xFFD9D9D9),
-              padding:
-                  const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-              child: const Row(
-                children: [
-                  Expanded(
-                    child: Text('강의명',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 13)),
-                  ),
-                  SizedBox(
-                    width: 72,
-                    child: Text('길이',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 13)),
-                  ),
-                  SizedBox(width: 64),
-                ],
-              ),
-            ),
-
-            // 영상 목록
-            ...(lesson.videos.toList()
-                  ..sort((a, b) => a.videoSequence.compareTo(b.videoSequence)))
-                .map((v) => _buildVideoRow(v, lesson.title)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAccordion(OnlineLessonInfo lesson) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () => setState(() => _infoOpen = !_infoOpen),
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text('강의 정보',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
-                ),
-                AnimatedRotation(
-                  turns: _infoOpen ? 0.25 : 0,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.play_arrow, size: 28, color: _kGray),
-                ),
-              ],
-            ),
-          ),
-        ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox.shrink(),
-          secondChild: _buildInfoTable(lesson),
-          crossFadeState: _infoOpen
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 250),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoTable(OnlineLessonInfo lesson) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          left: BorderSide(color: Color(0xFFC3C3C3)),
-          right: BorderSide(color: Color(0xFFC3C3C3)),
-          bottom: BorderSide(color: Color(0xFFC3C3C3)),
-        ),
-      ),
+      padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _InfoRow(label: '선생님', value: '${widget.teacherName} 선생님', isFirst: true),
-          _InfoRow(label: '강좌 범위', value: lesson.lessonRange),
-          _InfoRow(label: '강좌 설명', value: lesson.lessonDesc),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVideoRow(OnlineVideo video, String courseTitle) {
-    final title = video.mediaName.endsWith('.')
-        ? video.mediaName
-        : video.mediaName.contains('.')
-            ? video.mediaName.substring(0, video.mediaName.lastIndexOf('.'))
-            : video.mediaName;
-    final duration = video.duration != null
-        ? _formatDuration(video.duration!)
-        : '00:00:00';
-
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFD9D9D9), width: 2),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w700),
+          // 뒤로가기
+          GestureDetector(
+            onTap: () => context.canPop()
+                ? context.pop()
+                : context.go('/lesson-overview'),
+            child: const Row(
+              children: [
+                Icon(Icons.arrow_back_ios, size: 16, color: _kGray),
+                SizedBox(width: 4),
+                Text('목록으로',
+                    style: TextStyle(fontSize: 14, color: _kGray)),
+              ],
             ),
           ),
-          SizedBox(
-            width: 72,
-            child: Text(
-              duration,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w700),
-            ),
+          const SizedBox(height: 16),
+
+          // 강의 제목
+          Text(
+            lesson.title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
           ),
-          SizedBox(
-            width: 64,
-            child: GestureDetector(
-              onTap: () {
-                if (video.isPreview) {
-                  context.push(
-                    Uri(path: '/online-lesson', queryParameters: {
-                      'onlineCourseId': '${widget.onlineCourseId}',
-                      'videoId': '${video.videoId}',
-                      'courseName': courseTitle,
-                    }).toString(),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('무료 체험 강의가 아닙니다'),
-                      duration: Duration(seconds: 2),
+          const SizedBox(height: 12),
+
+          // 강의 정보 아코디언
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _kBorder),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                // 헤더
+                GestureDetector(
+                  onTap: () => setState(() => _infoOpen = !_infoOpen),
+                  child: Container(
+                    color: const Color(0xFFD9D9D9),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text('강의 정보',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                        AnimatedRotation(
+                          turns: _infoOpen ? 0.25 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: const Icon(Icons.play_arrow,
+                              size: 22, color: Color(0xFF4B5563)),
+                        ),
+                      ],
                     ),
-                  );
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                      color: video.isPreview
-                          ? _kBlue
-                          : const Color(0xFFD1D5DB),
-                      width: 1.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Play',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: video.isPreview ? _kBlue : const Color(0xFFD1D5DB),
                   ),
                 ),
-              ),
+                // 내용
+                AnimatedCrossFade(
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: Column(
+                    children: [
+                      _InfoRow(label: '선생님',
+                          value: '${widget.teacherName} 선생님',
+                          isFirst: true),
+                      _InfoRow(label: '강좌 범위', value: lesson.lessonRange),
+                      _InfoRow(label: '강좌 설명', value: lesson.lessonDesc),
+                    ],
+                  ),
+                  crossFadeState: _infoOpen
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  duration: const Duration(milliseconds: 200),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 영상 목록
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _kBorder),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                // 테이블 헤더
+                Container(
+                  color: const Color(0xFFD9D9D9),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 10, horizontal: 12),
+                  child: const Row(
+                    children: [
+                      Expanded(
+                        child: Text('강의명',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                      SizedBox(
+                        width: 72,
+                        child: Text('길이',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                      SizedBox(width: 60),
+                    ],
+                  ),
+                ),
+                // 영상 행
+                ...sorted.map((v) => _VideoRow(
+                      video: v,
+                      onlineCourseId: widget.onlineCourseId,
+                      courseTitle: lesson.title,
+                      formatDuration: _formatDuration,
+                    )),
+              ],
             ),
           ),
         ],
@@ -295,6 +218,127 @@ class _PreviewClassPageState extends State<PreviewClassPage> {
     );
   }
 }
+
+// ── 영상 행 ───────────────────────────────────────────────
+
+class _VideoRow extends StatefulWidget {
+  final OnlineVideo video;
+  final int onlineCourseId;
+  final String courseTitle;
+  final String Function(int) formatDuration;
+
+  const _VideoRow({
+    required this.video,
+    required this.onlineCourseId,
+    required this.courseTitle,
+    required this.formatDuration,
+  });
+
+  @override
+  State<_VideoRow> createState() => _VideoRowState();
+}
+
+class _VideoRowState extends State<_VideoRow> {
+  bool _hovered = false;
+
+  String get _displayName {
+    final name = widget.video.mediaName;
+    return name.contains('.')
+        ? name.substring(0, name.lastIndexOf('.'))
+        : name;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final canPlay = widget.video.isPreview;
+    return MouseRegion(
+      cursor: canPlay ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: GestureDetector(
+        onTap: canPlay
+            ? () => context.push(
+                  Uri(path: '/online-lesson', queryParameters: {
+                    'onlineCourseId': '${widget.onlineCourseId}',
+                    'videoId': '${widget.video.videoId}',
+                    'courseName': widget.courseTitle,
+                  }).toString(),
+                )
+            : () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('무료 체험 강의가 아닙니다'),
+                    duration: Duration(seconds: 2),
+                  ),
+                ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? _kBlue.withValues(alpha: 0.05)
+                : Colors.white,
+            border: const Border(
+              bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1),
+            ),
+          ),
+          padding:
+              const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _displayName,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+              SizedBox(
+                width: 72,
+                child: Text(
+                  widget.video.duration != null
+                      ? widget.formatDuration(widget.video.duration!)
+                      : '00:00:00',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: _kGray),
+                ),
+              ),
+              SizedBox(
+                width: 60,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: canPlay ? _kBlue : const Color(0xFFD1D5DB),
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Play',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: canPlay
+                            ? _kBlue
+                            : const Color(0xFFD1D5DB),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 강의 정보 행 ───────────────────────────────────────────
 
 class _InfoRow extends StatelessWidget {
   final String label;
@@ -316,7 +360,7 @@ class _InfoRow extends StatelessWidget {
             color: isFirst ? Colors.black : const Color(0xFFC3C3C3),
             width: isFirst ? 2 : 1,
           ),
-          bottom: const BorderSide(color: Color(0xFFC3C3C3)),
+          bottom: const BorderSide(color: Color(0xFFC3C3C3), width: 1),
         ),
       ),
       child: IntrinsicHeight(
@@ -326,20 +370,19 @@ class _InfoRow extends StatelessWidget {
             Container(
               width: 80,
               color: const Color(0xFFEEEEEE),
-              padding: const EdgeInsets.symmetric(vertical: 8),
               alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(label,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 13)),
+                      fontSize: 13, fontWeight: FontWeight.bold)),
             ),
             Expanded(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
                 child: Text(value,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 13)),
+                    style: const TextStyle(fontSize: 13)),
               ),
             ),
           ],
