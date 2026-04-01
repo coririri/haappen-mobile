@@ -81,23 +81,51 @@ class OnlineLessonInfo {
       );
 }
 
+class AttachmentDetail {
+  final int attachmentId;
+  final String attachmentTitle;
+  final String url;
+
+  const AttachmentDetail({
+    required this.attachmentId,
+    required this.attachmentTitle,
+    required this.url,
+  });
+
+  factory AttachmentDetail.fromJson(Map<String, dynamic> json) =>
+      AttachmentDetail(
+        attachmentId: json['attachmentId'] as int,
+        attachmentTitle: json['attachmentTitle'] as String,
+        url: json['url'] as String,
+      );
+}
+
 class OnlineVideo {
   final int videoId;
   final int videoSequence;
   final String mediaName;
+  final String mediaSrc;
   final int? duration;
+  final List<AttachmentDetail> attachmentDetails;
 
   const OnlineVideo({
     required this.videoId,
     required this.videoSequence,
     required this.mediaName,
+    required this.mediaSrc,
     this.duration,
+    this.attachmentDetails = const [],
   });
 
   factory OnlineVideo.fromJson(Map<String, dynamic> json) => OnlineVideo(
         videoId: json['videoId'] as int,
         videoSequence: json['videoSequence'] as int,
         mediaName: json['mediaName'] as String,
+        mediaSrc: json['mediaSrc'] as String? ?? '',
         duration: json['duration'] as int?,
+        attachmentDetails:
+            (json['attachmentDetails'] as List<dynamic>? ?? [])
+                .map((e) => AttachmentDetail.fromJson(e as Map<String, dynamic>))
+                .toList(),
       );
 }

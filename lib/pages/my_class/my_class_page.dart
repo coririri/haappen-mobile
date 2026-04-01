@@ -565,8 +565,12 @@ class _LessonRowState extends State<_LessonRow> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: () => context.go(
-          '/lesson?date=${widget.lesson.targetDate}&courseId=${widget.course.courseId}&courseName=${Uri.encodeComponent(widget.course.courseName)}',
+        onTap: () => context.push(
+          Uri(path: '/lesson', queryParameters: {
+            'date': widget.lesson.targetDate,
+            'courseId': '${widget.course.courseId}',
+            'courseName': widget.course.courseName,
+          }).toString(),
         ),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
@@ -669,8 +673,12 @@ class _VideoRowState extends State<_VideoRow> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: () => context.go(
-          '/online-lesson?onlineCourseId=${widget.onlineCourseId}&videoId=${widget.video.videoId}&courseName=${Uri.encodeComponent(widget.courseName)}',
+        onTap: () => context.push(
+          Uri(path: '/online-lesson', queryParameters: {
+            'onlineCourseId': '${widget.onlineCourseId}',
+            'videoId': '${widget.video.videoId}',
+            'courseName': widget.courseName,
+          }).toString(),
         ),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
