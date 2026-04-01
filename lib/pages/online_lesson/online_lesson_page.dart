@@ -125,14 +125,6 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
               children: [
                 _buildBackButton(),
                 const SizedBox(height: 16),
-                const Center(
-                  child: Text('영상 제목',
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _kGray)),
-                ),
-                const SizedBox(height: 8),
                 _buildTitleBox(video),
                 const SizedBox(height: 20),
                 _buildVideoPlayer(),
