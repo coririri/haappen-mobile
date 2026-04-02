@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:haanppen_mobile/apis/media_api.dart';
 import 'package:haanppen_mobile/apis/question_api.dart';
@@ -49,17 +50,106 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
     }
   }
 
-  Future<void> _pickImages() async {
+  Future<void> _showImageSourcePicker() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD1D5DB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined, color: _kBlue),
+                title: const Text('카메라로 촬영'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: _kBlue),
+                title: const Text('갤러리에서 선택'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    if (source == ImageSource.camera) {
+      await _pickFromCamera();
+    } else {
+      await _pickFromGallery();
+    }
+  }
+
+  Future<CroppedFile?> _cropImage(String path) {
+    return ImageCropper().cropImage(
+      sourcePath: path,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: '이미지 편집',
+          toolbarColor: _kBlue,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false,
+        ),
+        IOSUiSettings(title: '이미지 편집'),
+      ],
+    );
+  }
+
+  Future<void> _pickFromCamera() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    if (picked == null) return;
+
+    final cropped = await _cropImage(picked.path);
+    if (cropped == null) return;
+
+    setState(() => _isUploading = true);
+    try {
+      final bytes = await cropped.readAsBytes();
+      final url = await MediaApi.uploadImage(bytes, picked.name);
+      if (mounted) setState(() => _imageUrls = [..._imageUrls, url]);
+    } catch (e) {
+      debugPrint('이미지 업로드 실패: $e');
+      if (mounted) _showAlert('이미지 업로드에 실패했습니다.');
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
     final picker = ImagePicker();
     final picked = await picker.pickMultiImage(imageQuality: 70);
     if (picked.isEmpty) return;
 
+    final croppedFiles = <CroppedFile>[];
+    for (final f in picked) {
+      final cropped = await _cropImage(f.path);
+      if (cropped != null) croppedFiles.add(cropped);
+    }
+    if (croppedFiles.isEmpty) return;
+
     setState(() => _isUploading = true);
     try {
       final uploaded = await Future.wait(
-        picked.map((f) async {
+        croppedFiles.map((f) async {
           final bytes = await f.readAsBytes();
-          return MediaApi.uploadImage(bytes, f.name);
+          return MediaApi.uploadImage(bytes, f.path.split('/').last);
         }),
       );
       if (mounted) {
@@ -293,7 +383,7 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
         children: [
           // 이미지 추가 버튼
           OutlinedButton.icon(
-            onPressed: _isUploading ? null : _pickImages,
+            onPressed: _isUploading ? null : _showImageSourcePicker,
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF374151),
               side: const BorderSide(color: Color(0xFFD1D5DB)),
