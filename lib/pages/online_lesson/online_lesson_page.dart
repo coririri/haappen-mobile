@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:video_player/video_player.dart';
 import '../../apis/course_api.dart';
 import '../../constants/api_constants.dart';
 import '../../models/course.dart';
@@ -10,7 +11,6 @@ import '../../services/storage_service.dart';
 import '../../widgets/main_header.dart';
 
 const _kBlue = Color(0xFF3B82F6);
-
 const _kGray = Color(0xFF64748B);
 
 class OnlineLessonPage extends StatefulWidget {
@@ -34,19 +34,24 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
   String? _error;
   bool _loading = true;
 
-  VideoPlayerController? _videoController;
-  bool _videoInitialized = false;
+  late final Player _player;
+  late final VideoController _videoController;
+  bool _videoFailed = false;
   String? _videoUrl;
 
   @override
   void initState() {
     super.initState();
+    if (!kIsWeb) {
+      _player = Player();
+      _videoController = VideoController(_player);
+    }
     _load();
   }
 
   @override
   void dispose() {
-    _videoController?.dispose();
+    if (!kIsWeb) _player.dispose();
     super.dispose();
   }
 
@@ -59,31 +64,36 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
       );
       final url =
           '${ApiConstants.baseUrl}/media/stream?resourceId=${video.mediaSrc}';
-      setState(() {
-        _video = video;
-        _videoUrl = url;
-        _loading = false;
-      });
+
       if (!kIsWeb) await _initVideo(url);
+
+      if (mounted) {
+        setState(() {
+          _video = video;
+          _videoUrl = url;
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
   Future<void> _initVideo(String url) async {
-    final token = await StorageService.getAccessToken();
-    final controller = VideoPlayerController.networkUrl(
-      Uri.parse(url),
-      httpHeaders: {'Authorization': 'Bearer ${token ?? ''}'},
-    );
-    _videoController = controller;
     try {
-      await controller.initialize();
-      if (mounted) setState(() => _videoInitialized = true);
-    } catch (_) {}
+      final token = await StorageService.getAccessToken();
+      await _player.open(
+        Media(url, httpHeaders: {'Authorization': 'Bearer ${token ?? ''}'}),
+        play: false,
+      );
+    } catch (e) {
+      if (mounted) setState(() => _videoFailed = true);
+    }
   }
 
   @override
@@ -167,8 +177,7 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
         children: const [
           Icon(Icons.arrow_back_ios, size: 16, color: _kGray),
           SizedBox(width: 4),
-          Text('목록으로',
-              style: TextStyle(fontSize: 14, color: _kGray)),
+          Text('목록으로', style: TextStyle(fontSize: 14, color: _kGray)),
         ],
       ),
     );
@@ -199,6 +208,11 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
 
   Widget _buildVideoPlayer() {
     if (_videoUrl == null) return const SizedBox.shrink();
+
+    if (kIsWeb || _videoFailed) {
+      return _buildFallback();
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.black,
@@ -207,39 +221,44 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
       clipBehavior: Clip.antiAlias,
       child: AspectRatio(
         aspectRatio: 16 / 9,
-        child: kIsWeb || (!_videoInitialized && _videoController == null)
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.play_circle_outline,
-                        color: Colors.white70, size: 56),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: () => launchUrl(
-                        Uri.parse(_videoUrl!),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                      icon: const Icon(Icons.open_in_new, size: 16),
-                      label: const Text('브라우저에서 재생'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _kBlue,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
+        child: Video(
+          controller: _videoController,
+          controls: MaterialVideoControls,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallback() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.play_circle_outline,
+                  color: Colors.white70, size: 56),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse(_videoUrl!),
+                  mode: LaunchMode.externalApplication,
                 ),
-              )
-            : _videoInitialized && _videoController != null
-                ? Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      VideoPlayer(_videoController!),
-                      _VideoControls(controller: _videoController!),
-                    ],
-                  )
-                : const Center(
-                    child: CircularProgressIndicator(color: Colors.white)),
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('브라우저에서 재생'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kBlue,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -266,107 +285,6 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
   }
 }
 
-class _VideoControls extends StatefulWidget {
-  final VideoPlayerController controller;
-  const _VideoControls({required this.controller});
-
-  @override
-  State<_VideoControls> createState() => _VideoControlsState();
-}
-
-class _VideoControlsState extends State<_VideoControls> {
-  bool _visible = true;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_update);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_update);
-    super.dispose();
-  }
-
-  void _update() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = widget.controller;
-    final isPlaying = ctrl.value.isPlaying;
-    final duration = ctrl.value.duration;
-    final position = ctrl.value.position;
-    final progress = duration.inMilliseconds > 0
-        ? position.inMilliseconds / duration.inMilliseconds
-        : 0.0;
-
-    return GestureDetector(
-      onTap: () => setState(() => _visible = !_visible),
-      child: AnimatedOpacity(
-        opacity: _visible || !isPlaying ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 300),
-        child: Container(
-          color: Colors.black26,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              VideoProgressIndicator(ctrl,
-                  allowScrubbing: true,
-                  colors: const VideoProgressColors(
-                    playedColor: _kBlue,
-                    bufferedColor: Colors.white38,
-                    backgroundColor: Colors.white24,
-                  ),
-                  padding: EdgeInsets.zero),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () =>
-                          isPlaying ? ctrl.pause() : ctrl.play(),
-                      child: Icon(
-                        isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text('${_fmt(position)} / ${_fmt(duration)}',
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 12)),
-                    const Spacer(),
-                    Expanded(
-                      child: Slider(
-                        value: progress.clamp(0.0, 1.0),
-                        onChanged: (v) => ctrl.seekTo(Duration(
-                            milliseconds:
-                                (v * duration.inMilliseconds).round())),
-                        activeColor: _kBlue,
-                        inactiveColor: Colors.white38,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _fmt(Duration d) {
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-}
-
 class _AttachmentItem extends StatelessWidget {
   final AttachmentDetail attachment;
   const _AttachmentItem({required this.attachment});
@@ -386,8 +304,7 @@ class _AttachmentItem extends StatelessWidget {
             mode: LaunchMode.externalApplication),
         child: Row(
           children: [
-            const Icon(Icons.inventory_2_outlined,
-                color: _kGray, size: 22),
+            const Icon(Icons.inventory_2_outlined, color: _kGray, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

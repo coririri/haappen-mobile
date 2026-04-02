@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:video_player/video_player.dart';
 import '../../apis/course_api.dart';
 import '../../constants/api_constants.dart';
 import '../../models/lesson_detail.dart';
@@ -35,19 +36,24 @@ class _LessonPageState extends State<LessonPage> {
   bool _loading = true;
   int _videoIndex = 0;
 
-  VideoPlayerController? _videoController;
-  bool _videoInitialized = false;
+  late final Player _player;
+  late final VideoController _videoController;
+  bool _videoFailed = false;
   String? _currentVideoUrl;
 
   @override
   void initState() {
     super.initState();
+    if (!kIsWeb) {
+      _player = Player();
+      _videoController = VideoController(_player);
+    }
     _load();
   }
 
   @override
   void dispose() {
-    _videoController?.dispose();
+    if (!kIsWeb) _player.dispose();
     super.dispose();
   }
 
@@ -57,60 +63,55 @@ class _LessonPageState extends State<LessonPage> {
         courseId: widget.courseId,
         localDate: widget.date,
       );
-      setState(() {
-        _lesson = lesson;
-        _loading = false;
-      });
       if (lesson.memoMediaViews.isNotEmpty) {
         await _initVideo(lesson.memoMediaViews[0]);
       }
+      if (mounted) {
+        setState(() {
+          _lesson = lesson;
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
   Future<void> _initVideo(MemoMedia media) async {
-    await _videoController?.dispose();
-    _videoController = null;
     final url =
         '${ApiConstants.baseUrl}/media/stream?resourceId=${media.mediaSource}';
-    setState(() {
-      _videoInitialized = false;
-      _currentVideoUrl = url;
-    });
-
-    // video_player web does not support httpHeaders — use fallback UI on web
+    _currentVideoUrl = url;
     if (kIsWeb) return;
 
-    final token = await StorageService.getAccessToken();
-    final controller = VideoPlayerController.networkUrl(
-      Uri.parse(url),
-      httpHeaders: {'Authorization': 'Bearer ${token ?? ''}'},
-    );
-    _videoController = controller;
-
     try {
-      await controller.initialize();
-      if (mounted) setState(() => _videoInitialized = true);
-    } catch (_) {
-      // initialize failed — fallback UI will show
+      final token = await StorageService.getAccessToken();
+      await _player.open(
+        Media(url, httpHeaders: {'Authorization': 'Bearer ${token ?? ''}'}),
+        play: false,
+      );
+      if (mounted) setState(() => _videoFailed = false);
+    } catch (e) {
+      if (mounted) setState(() => _videoFailed = true);
     }
   }
 
   Future<void> _changeVideo(int index) async {
     if (_lesson == null) return;
-    setState(() => _videoIndex = index);
+    setState(() {
+      _videoIndex = index;
+      _videoFailed = false;
+    });
     await _initVideo(_lesson!.memoMediaViews[index]);
   }
 
   Future<void> _downloadAttachment(String mediaSource) async {
     final uri = Uri.parse(
         '${ApiConstants.baseUrl}/file/download?fileSrc=$mediaSource');
-    // Open with token as query param isn't ideal; use url_launcher with headers not supported.
-    // Open in browser — user will need to be logged in via web session.
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,9 +243,7 @@ class _LessonPageState extends State<LessonPage> {
   }
 
   Widget _buildTextWithLinks(String text) {
-    final urlRegex = RegExp(
-        r'https?://[^\s]+',
-        caseSensitive: false);
+    final urlRegex = RegExp(r'https?://[^\s]+', caseSensitive: false);
     final spans = <InlineSpan>[];
     int last = 0;
     for (final match in urlRegex.allMatches(text)) {
@@ -254,8 +253,8 @@ class _LessonPageState extends State<LessonPage> {
       final url = match.group(0)!;
       spans.add(WidgetSpan(
         child: GestureDetector(
-          onTap: () => launchUrl(Uri.parse(url),
-              mode: LaunchMode.externalApplication),
+          onTap: () =>
+              launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
           child: Text(
             url,
             style: const TextStyle(
@@ -282,7 +281,7 @@ class _LessonPageState extends State<LessonPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildVideoPlayer(media),
+        _buildVideoPlayer(),
         const SizedBox(height: 12),
         _buildVideoNavigation(lesson),
         if (media.attachmentViews.isNotEmpty) ...[
@@ -295,8 +294,11 @@ class _LessonPageState extends State<LessonPage> {
     );
   }
 
-  Widget _buildVideoPlayer(MemoMedia media) {
-    final showFallback = kIsWeb || (!_videoInitialized && _videoController == null && _currentVideoUrl != null);
+  Widget _buildVideoPlayer() {
+    if (kIsWeb || _videoFailed) {
+      return _buildFallback();
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.black,
@@ -305,40 +307,44 @@ class _LessonPageState extends State<LessonPage> {
       clipBehavior: Clip.antiAlias,
       child: AspectRatio(
         aspectRatio: 16 / 9,
-        child: showFallback
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.play_circle_outline,
-                        color: Colors.white70, size: 56),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: () => launchUrl(
-                        Uri.parse(_currentVideoUrl!),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                      icon: const Icon(Icons.open_in_new, size: 16),
-                      label: const Text('브라우저에서 재생'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _kBlue,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
+        child: Video(
+          controller: _videoController,
+          controls: MaterialVideoControls,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFallback() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.play_circle_outline,
+                  color: Colors.white70, size: 56),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: _currentVideoUrl != null
+                    ? () => launchUrl(Uri.parse(_currentVideoUrl!),
+                        mode: LaunchMode.externalApplication)
+                    : null,
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('브라우저에서 재생'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kBlue,
+                  foregroundColor: Colors.white,
                 ),
-              )
-            : _videoInitialized && _videoController != null
-                ? Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      VideoPlayer(_videoController!),
-                      _VideoControls(controller: _videoController!),
-                    ],
-                  )
-                : const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -349,7 +355,8 @@ class _LessonPageState extends State<LessonPage> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         TextButton.icon(
-          onPressed: _videoIndex > 0 ? () => _changeVideo(_videoIndex - 1) : null,
+          onPressed:
+              _videoIndex > 0 ? () => _changeVideo(_videoIndex - 1) : null,
           icon: const Icon(Icons.arrow_back_ios, size: 14),
           label: const Text('이전'),
           style: TextButton.styleFrom(foregroundColor: _kBlue),
@@ -359,8 +366,9 @@ class _LessonPageState extends State<LessonPage> {
           style: const TextStyle(fontSize: 13, color: _kGray),
         ),
         TextButton.icon(
-          onPressed:
-              _videoIndex < total - 1 ? () => _changeVideo(_videoIndex + 1) : null,
+          onPressed: _videoIndex < total - 1
+              ? () => _changeVideo(_videoIndex + 1)
+              : null,
           icon: const Icon(Icons.arrow_forward_ios, size: 14),
           label: const Text('다음'),
           iconAlignment: IconAlignment.end,
@@ -421,112 +429,6 @@ class _LessonPageState extends State<LessonPage> {
   }
 }
 
-class _VideoControls extends StatefulWidget {
-  final VideoPlayerController controller;
-  const _VideoControls({required this.controller});
-
-  @override
-  State<_VideoControls> createState() => _VideoControlsState();
-}
-
-class _VideoControlsState extends State<_VideoControls> {
-  bool _visible = true;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onControllerUpdate);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onControllerUpdate);
-    super.dispose();
-  }
-
-  void _onControllerUpdate() {
-    if (mounted) setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = widget.controller;
-    final isPlaying = ctrl.value.isPlaying;
-    final duration = ctrl.value.duration;
-    final position = ctrl.value.position;
-    final progress =
-        duration.inMilliseconds > 0 ? position.inMilliseconds / duration.inMilliseconds : 0.0;
-
-    return GestureDetector(
-      onTap: () => setState(() => _visible = !_visible),
-      child: AnimatedOpacity(
-        opacity: _visible || !isPlaying ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 300),
-        child: Container(
-          color: Colors.black26,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              VideoProgressIndicator(
-                ctrl,
-                allowScrubbing: true,
-                colors: const VideoProgressColors(
-                  playedColor: _kBlue,
-                  bufferedColor: Colors.white38,
-                  backgroundColor: Colors.white24,
-                ),
-                padding: EdgeInsets.zero,
-              ),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () =>
-                          isPlaying ? ctrl.pause() : ctrl.play(),
-                      child: Icon(
-                        isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_fmt(position)} / ${_fmt(duration)}',
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 12),
-                    ),
-                    const Spacer(),
-                    Expanded(
-                      child: Slider(
-                        value: progress.clamp(0.0, 1.0),
-                        onChanged: (v) {
-                          ctrl.seekTo(Duration(
-                              milliseconds:
-                                  (v * duration.inMilliseconds).round()));
-                        },
-                        activeColor: _kBlue,
-                        inactiveColor: Colors.white38,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _fmt(Duration d) {
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-}
-
 class _AttachmentRow extends StatelessWidget {
   final AttachmentView attachment;
   final VoidCallback onDownload;
@@ -551,8 +453,7 @@ class _AttachmentRow extends StatelessWidget {
           GestureDetector(
             onTap: onDownload,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(6),
@@ -645,7 +546,8 @@ class _VideoListRowState extends State<_VideoListRow> {
                     fontWeight: widget.isActive
                         ? FontWeight.w600
                         : FontWeight.normal,
-                    color: widget.isActive ? _kBlue : const Color(0xFF1E293B),
+                    color:
+                        widget.isActive ? _kBlue : const Color(0xFF1E293B),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
