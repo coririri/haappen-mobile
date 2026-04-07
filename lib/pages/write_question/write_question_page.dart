@@ -113,7 +113,7 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
 
   Future<void> _pickFromCamera() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 40);
     if (picked == null) return;
 
     // iOS에서 카메라 뷰 컨트롤러가 완전히 닫힌 후 crop UI 표시
@@ -137,7 +137,7 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
 
   Future<void> _pickFromGallery() async {
     final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(imageQuality: 70);
+    final picked = await picker.pickMultiImage(imageQuality: 40);
     if (picked.isEmpty) return;
 
     final croppedFiles = <CroppedFile>[];

@@ -99,7 +99,7 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
 
   Future<void> _pickAndUploadImages() async {
     final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(imageQuality: 70);
+    final picked = await picker.pickMultiImage(imageQuality: 40);
     if (picked.isEmpty) return;
     setState(() => _isUploading = true);
     try {
@@ -154,7 +154,7 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
 
   Future<void> _pickCommentImages() async {
     final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(imageQuality: 70);
+    final picked = await picker.pickMultiImage(imageQuality: 40);
     if (picked.isEmpty) return;
     setState(() => _isCommentUploading = true);
     try {
@@ -778,7 +778,7 @@ class _CommentCardState extends State<_CommentCard> {
 
   Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(imageQuality: 70);
+    final picked = await picker.pickMultiImage(imageQuality: 40);
     if (picked.isEmpty) return;
     setState(() => _isUploading = true);
     try {
