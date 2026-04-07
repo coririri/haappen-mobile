@@ -117,10 +117,24 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
     if (picked == null) return;
 
     // iOS에서 카메라 뷰 컨트롤러가 완전히 닫힌 후 crop UI 표시
-    await Future.delayed(const Duration(milliseconds: 400));
+    await Future.delayed(const Duration(milliseconds: 800));
 
     final cropped = await _cropImage(picked.path);
-    if (cropped == null) return;
+    if (cropped == null) {
+      // crop 취소 or 실패 → 원본 그대로 업로드
+      setState(() => _isUploading = true);
+      try {
+        final bytes = await picked.readAsBytes();
+        final url = await MediaApi.uploadImage(bytes, picked.name);
+        if (mounted) setState(() => _imageUrls = [..._imageUrls, url]);
+      } catch (e) {
+        debugPrint('이미지 업로드 실패: $e');
+        if (mounted) _showAlert('이미지 업로드 실패: $e');
+      } finally {
+        if (mounted) setState(() => _isUploading = false);
+      }
+      return;
+    }
 
     setState(() => _isUploading = true);
     try {
