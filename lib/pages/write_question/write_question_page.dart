@@ -126,7 +126,7 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
       if (mounted) setState(() => _imageUrls = [..._imageUrls, url]);
     } catch (e) {
       debugPrint('이미지 업로드 실패: $e');
-      if (mounted) _showAlert('이미지 업로드에 실패했습니다.');
+      if (mounted) _showAlert('이미지 업로드 실패: $e');
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -157,7 +157,7 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
       }
     } catch (e) {
       debugPrint('이미지 업로드 실패: $e');
-      if (mounted) _showAlert('이미지 업로드에 실패했습니다.');
+      if (mounted) _showAlert('이미지 업로드 실패: $e');
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
