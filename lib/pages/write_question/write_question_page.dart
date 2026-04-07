@@ -116,6 +116,9 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
     final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
     if (picked == null) return;
 
+    // iOS에서 카메라 뷰 컨트롤러가 완전히 닫힌 후 crop UI 표시
+    await Future.delayed(const Duration(milliseconds: 400));
+
     final cropped = await _cropImage(picked.path);
     if (cropped == null) return;
 
