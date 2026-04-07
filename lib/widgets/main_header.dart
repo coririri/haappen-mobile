@@ -44,7 +44,9 @@ class _MainHeaderState extends State<MainHeader> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return SafeArea(
+      bottom: false,
+      child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
@@ -116,6 +118,7 @@ class _MainHeaderState extends State<MainHeader> {
         const Divider(height: 1, thickness: 0.5, color: Color(0xFFE2E8F0)),
         _buildNav(context),
       ],
+      ),
     );
   }
 
