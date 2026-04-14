@@ -38,6 +38,7 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
   late final VideoController _videoController;
   bool _videoFailed = false;
   String? _videoUrl;
+  double _playbackRate = 1.0;
 
   @override
   void initState() {
@@ -82,6 +83,12 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
         });
       }
     }
+  }
+
+  void _setRate(double rate) {
+    if (kIsWeb) return;
+    _player.setRate(rate);
+    setState(() => _playbackRate = rate);
   }
 
   Future<void> _initVideo(String url) async {
@@ -138,6 +145,8 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
                 _buildTitleBox(video),
                 const SizedBox(height: 20),
                 _buildVideoPlayer(),
+                const SizedBox(height: 8),
+                _buildSpeedControl(),
                 if (video.attachmentDetails.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   _buildAttachments(video),
@@ -203,6 +212,34 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
           color: Color(0xFF1E293B),
         ),
       ),
+    );
+  }
+
+  Widget _buildSpeedControl() {
+    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+    return Row(
+      children: speeds.map((speed) {
+        final isSelected = _playbackRate == speed;
+        return GestureDetector(
+          onTap: () => _setRate(speed),
+          child: Container(
+            margin: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: isSelected ? _kBlue : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${speed == speed.truncateToDouble() ? speed.toInt() : speed}x',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : _kGray,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 

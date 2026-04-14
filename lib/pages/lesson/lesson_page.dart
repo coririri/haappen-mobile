@@ -40,6 +40,7 @@ class _LessonPageState extends State<LessonPage> {
   late final VideoController _videoController;
   bool _videoFailed = false;
   String? _currentVideoUrl;
+  double _playbackRate = 1.0;
 
   @override
   void initState() {
@@ -98,6 +99,12 @@ class _LessonPageState extends State<LessonPage> {
     } catch (e) {
       if (mounted) setState(() => _videoFailed = true);
     }
+  }
+
+  void _setRate(double rate) {
+    if (kIsWeb) return;
+    _player.setRate(rate);
+    setState(() => _playbackRate = rate);
   }
 
   Future<void> _changeVideo(int index) async {
@@ -282,7 +289,9 @@ class _LessonPageState extends State<LessonPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildVideoPlayer(),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
+        _buildSpeedControl(),
+        const SizedBox(height: 4),
         _buildVideoNavigation(lesson),
         if (media.attachmentViews.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -291,6 +300,34 @@ class _LessonPageState extends State<LessonPage> {
         const SizedBox(height: 16),
         _buildVideoList(lesson),
       ],
+    );
+  }
+
+  Widget _buildSpeedControl() {
+    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+    return Row(
+      children: speeds.map((speed) {
+        final isSelected = _playbackRate == speed;
+        return GestureDetector(
+          onTap: () => _setRate(speed),
+          child: Container(
+            margin: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: isSelected ? _kBlue : const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${speed == speed.truncateToDouble() ? speed.toInt() : speed}x',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : _kGray,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
