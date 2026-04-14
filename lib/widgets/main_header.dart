@@ -129,7 +129,7 @@ class _MainHeaderState extends State<MainHeader> {
         final isActive = currentPath.startsWith(item.route.split('?').first);
         return Expanded(
           child: GestureDetector(
-            onTap: () => context.go(item.route),
+            onTap: () => context.push(item.route),
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: Container(
