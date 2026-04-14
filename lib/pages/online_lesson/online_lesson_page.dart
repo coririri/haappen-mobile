@@ -170,7 +170,7 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
         if (context.canPop()) {
           context.pop();
         } else {
-          context.go('/my-class');
+          context.push('/my-class');
         }
       },
       child: Row(

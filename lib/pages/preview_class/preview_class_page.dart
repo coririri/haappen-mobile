@@ -89,7 +89,7 @@ class _PreviewClassPageState extends State<PreviewClassPage> {
           GestureDetector(
             onTap: () => context.canPop()
                 ? context.pop()
-                : context.go('/lesson-overview'),
+                : context.push('/lesson-overview'),
             child: const Row(
               children: [
                 Icon(Icons.arrow_back_ios, size: 16, color: _kGray),

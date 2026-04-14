@@ -121,17 +121,13 @@ class _MyClassPageState extends State<MyClassPage> {
   }
 
   void _onClassChanged(BuildContext context, int index) {
-    final courseType = _courseList[index].type;
     setState(() {
       _selectedClassIndex = index;
       _page = 0;
       _onlineLessonInfo = null;
       _isInfoOpen = false;
     });
-    context.go(
-      '/my-class?classIndex=$index&sortIndex=$_selectedSortIndex&courseType=$courseType',
-    );
-    // _loadLessons()는 didUpdateWidget에서 URL 변경을 감지해 호출됨
+    _loadLessons();
   }
 
   void _onSortChanged(int index) {

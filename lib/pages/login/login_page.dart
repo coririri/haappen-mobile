@@ -209,7 +209,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 24),
                 GestureDetector(
-                  onTap: () => context.go('/privacy'),
+                  onTap: () => context.push('/privacy'),
                   child: const Text(
                     '개인정보처리방침',
                     style: TextStyle(
