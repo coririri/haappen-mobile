@@ -146,7 +146,7 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
     if (!confirmed) return;
     try {
       await QuestionApi.deleteQuestion(int.parse(widget.id));
-      if (mounted) context.go('/question-board');
+      if (mounted) context.pop();
     } catch (e) {
       if (mounted) _showAlert('삭제에 실패했습니다.');
     }

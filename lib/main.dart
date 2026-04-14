@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
       ),
       routerConfig: appRouter,
+      builder: (context, child) => SafeArea(top: false, child: child!),
     );
   }
 }

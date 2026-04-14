@@ -72,7 +72,7 @@ class _MainHeaderState extends State<MainHeader> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => context.go('/user-information'),
+                  onTap: () => context.push('/user-information'),
                   child: Container(
                     height: 34,
                     padding: const EdgeInsets.symmetric(horizontal: 10),

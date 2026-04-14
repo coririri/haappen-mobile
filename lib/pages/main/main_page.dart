@@ -367,7 +367,7 @@ class _CourseTile extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           TextButton(
-            onPressed: () => context.go(
+            onPressed: () => context.push(
               '/lesson?date=$date&courseId=${course.courseId}',
             ),
             style: TextButton.styleFrom(

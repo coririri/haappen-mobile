@@ -175,7 +175,7 @@ class _QuestionBoardPageState extends State<QuestionBoardPage> {
             SizedBox(
               height: 36,
               child: ElevatedButton.icon(
-                onPressed: () => context.go('/write-question'),
+                onPressed: () => context.push('/write-question'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kBlue,
                   foregroundColor: Colors.white,
@@ -357,7 +357,7 @@ class _QuestionRowState extends State<_QuestionRow> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: () => context.go('/question/${q.questionId}'),
+        onTap: () => context.push('/question/${q.questionId}'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           color: _hovered

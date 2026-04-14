@@ -214,7 +214,7 @@ class _WriteQuestionPageState extends State<WriteQuestionPage> {
         images: _imageUrls,
         targetMemberId: targetId,
       );
-      if (mounted) context.go('/question-board');
+      if (mounted) context.pop();
     } catch (e) {
       debugPrint('질문 작성 실패: $e');
       if (mounted) _showAlert('질문 작성에 실패했습니다.');
