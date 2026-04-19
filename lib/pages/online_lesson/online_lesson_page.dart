@@ -256,9 +256,16 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
         color: Colors.black,
         child: AspectRatio(
           aspectRatio: 16 / 9,
-          child: Video(
-            controller: _videoController,
-            controls: MaterialVideoControls,
+          child: MaterialVideoControlsTheme(
+            normal: const MaterialVideoControlsThemeData(
+              seekBarMargin: EdgeInsets.only(bottom: 12, left: 12, right: 12),
+              bottomButtonBarMargin: EdgeInsets.only(bottom: 4, left: 8, right: 8),
+            ),
+            fullscreen: const MaterialVideoControlsThemeData(),
+            child: Video(
+              controller: _videoController,
+              controls: MaterialVideoControls,
+            ),
           ),
         ),
       ),
