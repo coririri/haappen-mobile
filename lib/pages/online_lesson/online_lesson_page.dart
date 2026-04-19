@@ -250,17 +250,16 @@ class _OnlineLessonPageState extends State<OnlineLessonPage> {
       return _buildFallback();
     }
 
-    return Container(
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: ColoredBox(
         color: Colors.black,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Video(
-          controller: _videoController,
-          controls: MaterialVideoControls,
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Video(
+            controller: _videoController,
+            controls: MaterialVideoControls,
+          ),
         ),
       ),
     );
