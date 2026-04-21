@@ -706,7 +706,7 @@ class _VideoRowState extends State<_VideoRow> {
               Expanded(
                 child: Text(
                   _displayName,
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.start,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
