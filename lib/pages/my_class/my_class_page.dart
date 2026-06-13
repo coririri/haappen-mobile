@@ -1,11 +1,15 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:haanppen_mobile/apis/course_api.dart';
+import 'package:haanppen_mobile/apis/workbook_api.dart';
 import 'package:haanppen_mobile/models/course.dart';
+import 'package:haanppen_mobile/models/workbook.dart';
 import 'package:haanppen_mobile/widgets/main_header.dart';
 
-
 const _kBlue = Color(0xFF3B82F6);
+const _kPurple = Color(0xFF7C3AED);
 const _kPageSize = 8;
 
 class MyClassPage extends StatefulWidget {
@@ -34,6 +38,8 @@ class _MyClassPageState extends State<MyClassPage> {
       const LessonPageInfo(totalItemSize: 0, currentPage: 0, pageSize: 8);
   int _page = 0;
   OnlineLessonInfo? _onlineLessonInfo;
+  WorkbookDetail? _workbookDetail;
+  int _workbookRangeIndex = 0;
   bool _isLoading = true;
   bool _isLessonLoading = false;
   bool _isInfoOpen = false;
@@ -56,6 +62,8 @@ class _MyClassPageState extends State<MyClassPage> {
         _selectedSortIndex = widget.sortIndex;
         _page = 0;
         _onlineLessonInfo = null;
+        _workbookDetail = null;
+        _workbookRangeIndex = 0;
         _isInfoOpen = false;
       });
       if (widget.classIndex >= 0) _loadLessons();
@@ -71,8 +79,9 @@ class _MyClassPageState extends State<MyClassPage> {
       ]);
       final offline = results[0];
       final online = results[1];
+      final workbook = WorkbookApi.getWorkbookCourses();
       if (mounted) {
-        setState(() => _courseList = [...offline, ...online]);
+        setState(() => _courseList = [...offline, ...online, ...workbook]);
         // 외부에서 classIndex가 넘어온 경우에만 자동 로드
         if (_selectedClassIndex >= 0) await _loadLessons();
       }
@@ -106,17 +115,19 @@ class _MyClassPageState extends State<MyClassPage> {
       } finally {
         if (mounted) setState(() => _isLessonLoading = false);
       }
-    } else {
+    } else if (course.type == 'online') {
       setState(() => _isLessonLoading = true);
       try {
-        final info =
-            await CourseApi.getOnlineLessonDetail(course.courseId);
+        final info = await CourseApi.getOnlineLessonDetail(course.courseId);
         if (mounted) setState(() => _onlineLessonInfo = info);
       } catch (e) {
         debugPrint('온라인 강의 로드 실패: $e');
       } finally {
         if (mounted) setState(() => _isLessonLoading = false);
       }
+    } else if (course.type == 'workbook') {
+      final detail = WorkbookApi.getWorkbookDetail(course.courseId);
+      if (mounted) setState(() => _workbookDetail = detail);
     }
   }
 
@@ -125,6 +136,8 @@ class _MyClassPageState extends State<MyClassPage> {
       _selectedClassIndex = index;
       _page = 0;
       _onlineLessonInfo = null;
+      _workbookDetail = null;
+      _workbookRangeIndex = 0;
       _isInfoOpen = false;
     });
     _loadLessons();
@@ -234,6 +247,7 @@ class _MyClassPageState extends State<MyClassPage> {
                     child: Center(
                         child: CircularProgressIndicator(color: _kBlue)))
                 : _buildOnlineLessonList(),
+          if (_currentType == 'workbook') _buildWorkbookContent(),
         ],
       ),
     );
@@ -263,26 +277,7 @@ class _MyClassPageState extends State<MyClassPage> {
                 children: [
                   Text(_courseList[i].courseName),
                   const SizedBox(width: 6),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _courseList[i].type == 'offline'
-                          ? const Color(0xFFDCFCE7)
-                          : const Color(0xFFDBEAFE),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _courseList[i].type == 'offline' ? '오프라인' : '온라인',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: _courseList[i].type == 'offline'
-                            ? const Color(0xFF16A34A)
-                            : _kBlue,
-                      ),
-                    ),
-                  ),
+                  _CourseTypeBadge(type: _courseList[i].type),
                 ],
               ),
             ),
@@ -518,6 +513,145 @@ class _MyClassPageState extends State<MyClassPage> {
         _InfoRow(label: '선생님', value: '$teacherName 선생님', isFirst: true),
         _InfoRow(label: '강좌 범위', value: info.lessonRange),
         _InfoRow(label: '강좌 설명', value: info.lessonDesc),
+      ],
+    );
+  }
+
+  // ── 문제집 강의 ───────────────────────────────────────────
+  static const _kRangeSize = 50;
+
+  Widget _buildWorkbookContent() {
+    final detail = _workbookDetail;
+    if (detail == null) return const SizedBox.shrink();
+
+    final total = detail.problems.length;
+    final rangeCount = (total / _kRangeSize).ceil();
+    final rangeStart = _workbookRangeIndex * _kRangeSize;
+    final rangeEnd = min(rangeStart + _kRangeSize, total);
+    final visible = detail.problems.sublist(rangeStart, rangeEnd);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 제목 + 설명
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                detail.title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                detail.description,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF6B7280),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '총 $total문항',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: _kPurple,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // 범위 선택 칩
+        if (rangeCount > 1) ...[
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(rangeCount, (i) {
+                final s = i * _kRangeSize + 1;
+                final e = min((i + 1) * _kRangeSize, total);
+                final selected = i == _workbookRangeIndex;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _workbookRangeIndex = i),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selected ? _kPurple : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: selected
+                              ? _kPurple
+                              : const Color(0xFFD1D5DB),
+                        ),
+                      ),
+                      child: Text(
+                        '$s~$e번',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: selected
+                              ? Colors.white
+                              : const Color(0xFF374151),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        // 문항 그리드
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1,
+            ),
+            itemCount: visible.length,
+            itemBuilder: (_, i) => _ProblemCell(problem: visible[i]),
+          ),
+        ),
       ],
     );
   }
@@ -832,6 +966,69 @@ class _PageBtn extends StatelessWidget {
                         : const Color(0xFF374151),
                   ),
                 ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── 강의 타입 배지 ─────────────────────────────────────────
+class _CourseTypeBadge extends StatelessWidget {
+  final String type;
+  const _CourseTypeBadge({required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    final (bg, fg, label) = switch (type) {
+      'offline' => (const Color(0xFFDCFCE7), const Color(0xFF16A34A), '오프라인'),
+      'online' => (const Color(0xFFDBEAFE), _kBlue, '온라인'),
+      _ => (const Color(0xFFEDE9FE), _kPurple, '문제집'),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: fg),
+      ),
+    );
+  }
+}
+
+// ── 문제집 문항 셀 ─────────────────────────────────────────
+class _ProblemCell extends StatelessWidget {
+  final WorkbookProblem problem;
+  const _ProblemCell({required this.problem});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        // TODO: 풀이 영상 페이지 연결
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F3FF),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFDDD6FE)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${problem.problemNumber}',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF374151),
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Icon(Icons.play_circle_outline, size: 18, color: _kPurple),
+          ],
         ),
       ),
     );
