@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:haanppen_mobile/services/api_client.dart';
+import 'package:haanppen_mobile/services/storage_service.dart';
 
 class LoginResponse {
   final String accessToken;
@@ -36,11 +39,29 @@ class AuthApi {
     required String id,
     required String password,
   }) async {
-    final data = await ApiClient.post(
+    final response = await ApiClient.postRaw(
       _login,
       body: {'userPhoneNumber': id, 'password': password},
     );
-
+    if (response.statusCode >= 400) {
+      String message = '요청에 실패했습니다.';
+      try {
+        final errorData = jsonDecode(response.body) as Map<String, dynamic>;
+        message = errorData['errorDescription'] as String? ??
+            errorData['message'] as String? ??
+            message;
+      } catch (_) {}
+      throw ApiException(statusCode: response.statusCode, message: message);
+    }
+    final setCookie = response.headers['set-cookie'];
+    if (setCookie != null) {
+      final match = RegExp(r'refreshToken=([^;]+)').firstMatch(setCookie);
+      final refreshToken = match?.group(1);
+      if (refreshToken != null) {
+        await StorageService.saveRefreshToken(refreshToken);
+      }
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
     return LoginResponse.fromJson(data);
   }
 

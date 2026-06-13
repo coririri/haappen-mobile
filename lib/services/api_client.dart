@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:haanppen_mobile/constants/api_constants.dart';
 import 'auth_service.dart';
+import 'storage_service.dart';
 
 class ApiClient {
   static final _client = http.Client();
@@ -11,11 +12,48 @@ class ApiClient {
         .replace(queryParameters: queryParams);
   }
 
+  static Map<String, String> _withUpdatedToken(
+    Map<String, String> headers,
+    String newToken,
+  ) {
+    if (!headers.containsKey('Authorization')) return headers;
+    return {...headers, 'Authorization': 'Bearer $newToken'};
+  }
+
+  static Future<bool> _tryRefreshToken() async {
+    final refreshToken = await StorageService.getRefreshToken();
+    if (refreshToken == null) return false;
+    try {
+      final uri = _buildUri('/login/refresh');
+      final response = await _client.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'refreshToken=$refreshToken',
+        },
+      );
+      if (response.statusCode != 200) return false;
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final newAccessToken = body['accessToken'] as String?;
+      if (newAccessToken == null) return false;
+      await StorageService.saveAccessToken(newAccessToken);
+      final newSetCookie = response.headers['set-cookie'];
+      if (newSetCookie != null) {
+        final match = RegExp(r'refreshToken=([^;]+)').firstMatch(newSetCookie);
+        final newRefreshToken = match?.group(1);
+        if (newRefreshToken != null) {
+          await StorageService.saveRefreshToken(newRefreshToken);
+        }
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<Map<String, dynamic>> _handleResponse(http.Response response) {
     if (response.statusCode >= 400) {
-      if (response.statusCode == 401) {
-        AuthService.instance.logout();
-      }
+      if (response.statusCode == 401) AuthService.instance.logout();
       String message = '요청에 실패했습니다.';
       try {
         final errorData = jsonDecode(response.body) as Map<String, dynamic>;
@@ -37,16 +75,32 @@ class ApiClient {
     }
   }
 
+  static Future<http.Response> postRaw(
+    String path, {
+    Map<String, dynamic> body = const {},
+    Map<String, String>? headers,
+  }) async {
+    final uri = _buildUri(path);
+    return _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json', ...?headers},
+      body: body.isEmpty ? null : jsonEncode(body),
+    );
+  }
+
   static Future<Map<String, dynamic>> get(
     String path, {
     Map<String, String>? queryParams,
     Map<String, String>? headers,
   }) async {
     final uri = _buildUri(path, queryParams: queryParams);
-    final response = await _client.get(
-      uri,
-      headers: {'Content-Type': 'application/json', ...?headers},
-    );
+    var reqHeaders = {'Content-Type': 'application/json', ...?headers};
+    var response = await _client.get(uri, headers: reqHeaders);
+    if (response.statusCode == 401 && await _tryRefreshToken()) {
+      final newToken = await StorageService.getAccessToken();
+      if (newToken != null) reqHeaders = _withUpdatedToken(reqHeaders, newToken);
+      response = await _client.get(uri, headers: reqHeaders);
+    }
     return _handleResponse(response);
   }
 
@@ -56,10 +110,13 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = _buildUri(path, queryParams: queryParams);
-    final response = await _client.get(
-      uri,
-      headers: {'Content-Type': 'application/json', ...?headers},
-    );
+    var reqHeaders = {'Content-Type': 'application/json', ...?headers};
+    var response = await _client.get(uri, headers: reqHeaders);
+    if (response.statusCode == 401 && await _tryRefreshToken()) {
+      final newToken = await StorageService.getAccessToken();
+      if (newToken != null) reqHeaders = _withUpdatedToken(reqHeaders, newToken);
+      response = await _client.get(uri, headers: reqHeaders);
+    }
     if (response.statusCode >= 400) {
       if (response.statusCode == 401) AuthService.instance.logout();
       String message = '요청에 실패했습니다.';
@@ -84,10 +141,13 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = _buildUri(path);
-    final response = await _client.delete(
-      uri,
-      headers: {'Content-Type': 'application/json', ...?headers},
-    );
+    var reqHeaders = {'Content-Type': 'application/json', ...?headers};
+    var response = await _client.delete(uri, headers: reqHeaders);
+    if (response.statusCode == 401 && await _tryRefreshToken()) {
+      final newToken = await StorageService.getAccessToken();
+      if (newToken != null) reqHeaders = _withUpdatedToken(reqHeaders, newToken);
+      response = await _client.delete(uri, headers: reqHeaders);
+    }
     if (response.statusCode >= 400) {
       if (response.statusCode == 401) AuthService.instance.logout();
       String message = '요청에 실패했습니다.';
@@ -108,11 +168,21 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = _buildUri(path, queryParams: queryParams);
-    final response = await _client.post(
+    var reqHeaders = {'Content-Type': 'application/json', ...?headers};
+    var response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json', ...?headers},
+      headers: reqHeaders,
       body: body.isEmpty ? null : jsonEncode(body),
     );
+    if (response.statusCode == 401 && await _tryRefreshToken()) {
+      final newToken = await StorageService.getAccessToken();
+      if (newToken != null) reqHeaders = _withUpdatedToken(reqHeaders, newToken);
+      response = await _client.post(
+        uri,
+        headers: reqHeaders,
+        body: body.isEmpty ? null : jsonEncode(body),
+      );
+    }
     return _handleResponse(response);
   }
 
@@ -123,11 +193,21 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = _buildUri(path, queryParams: queryParams);
-    final response = await _client.put(
+    var reqHeaders = {'Content-Type': 'application/json', ...?headers};
+    var response = await _client.put(
       uri,
-      headers: {'Content-Type': 'application/json', ...?headers},
+      headers: reqHeaders,
       body: body.isEmpty ? null : jsonEncode(body),
     );
+    if (response.statusCode == 401 && await _tryRefreshToken()) {
+      final newToken = await StorageService.getAccessToken();
+      if (newToken != null) reqHeaders = _withUpdatedToken(reqHeaders, newToken);
+      response = await _client.put(
+        uri,
+        headers: reqHeaders,
+        body: body.isEmpty ? null : jsonEncode(body),
+      );
+    }
     return _handleResponse(response);
   }
 
@@ -138,11 +218,21 @@ class ApiClient {
     Map<String, String>? headers,
   }) async {
     final uri = _buildUri(path, queryParams: queryParams);
-    final response = await _client.patch(
+    var reqHeaders = {'Content-Type': 'application/json', ...?headers};
+    var response = await _client.patch(
       uri,
-      headers: {'Content-Type': 'application/json', ...?headers},
+      headers: reqHeaders,
       body: body.isEmpty ? null : jsonEncode(body),
     );
+    if (response.statusCode == 401 && await _tryRefreshToken()) {
+      final newToken = await StorageService.getAccessToken();
+      if (newToken != null) reqHeaders = _withUpdatedToken(reqHeaders, newToken);
+      response = await _client.patch(
+        uri,
+        headers: reqHeaders,
+        body: body.isEmpty ? null : jsonEncode(body),
+      );
+    }
     return _handleResponse(response);
   }
 }

@@ -4,6 +4,7 @@ class StorageService {
   static const _storage = FlutterSecureStorage();
 
   static const _keyAccessToken = 'accessToken';
+  static const _keyRefreshToken = 'refreshToken';
   static const _keyUserName = 'userName';
   static const _keyRole = 'role';
 
@@ -19,8 +20,17 @@ class StorageService {
     ]);
   }
 
+  static Future<void> saveAccessToken(String token) =>
+      _storage.write(key: _keyAccessToken, value: token);
+
+  static Future<void> saveRefreshToken(String token) =>
+      _storage.write(key: _keyRefreshToken, value: token);
+
   static Future<String?> getAccessToken() =>
       _storage.read(key: _keyAccessToken);
+
+  static Future<String?> getRefreshToken() =>
+      _storage.read(key: _keyRefreshToken);
 
   static Future<String?> getUserName() =>
       _storage.read(key: _keyUserName);
