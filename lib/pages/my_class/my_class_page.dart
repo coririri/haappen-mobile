@@ -38,7 +38,7 @@ class _MyClassPageState extends State<MyClassPage> {
       const LessonPageInfo(totalItemSize: 0, currentPage: 0, pageSize: 8);
   int _page = 0;
   OnlineLessonInfo? _onlineLessonInfo;
-  WorkbookDetail? _workbookDetail;
+  WorkbookLecture? _workbookLecture;
   int _workbookRangeIndex = 0;
   bool _isLoading = true;
   bool _isLessonLoading = false;
@@ -62,7 +62,7 @@ class _MyClassPageState extends State<MyClassPage> {
         _selectedSortIndex = widget.sortIndex;
         _page = 0;
         _onlineLessonInfo = null;
-        _workbookDetail = null;
+        _workbookLecture = null;
         _workbookRangeIndex = 0;
         _isInfoOpen = false;
       });
@@ -76,10 +76,11 @@ class _MyClassPageState extends State<MyClassPage> {
       final results = await Future.wait([
         CourseApi.getOwnCourses(),
         CourseApi.getOwnOnlineCourses(),
+        WorkbookApi.getWorkbookCourses(),
       ]);
       final offline = results[0];
       final online = results[1];
-      final workbook = WorkbookApi.getWorkbookCourses();
+      final workbook = results[2];
       if (mounted) {
         setState(() => _courseList = [...offline, ...online, ...workbook]);
         // 외부에서 classIndex가 넘어온 경우에만 자동 로드
@@ -126,8 +127,15 @@ class _MyClassPageState extends State<MyClassPage> {
         if (mounted) setState(() => _isLessonLoading = false);
       }
     } else if (course.type == 'workbook') {
-      final detail = WorkbookApi.getWorkbookDetail(course.courseId);
-      if (mounted) setState(() => _workbookDetail = detail);
+      setState(() => _isLessonLoading = true);
+      try {
+        final lecture = await WorkbookApi.getWorkbookLecture(course.courseId);
+        if (mounted) setState(() => _workbookLecture = lecture);
+      } catch (e) {
+        debugPrint('문제집 강의 로드 실패: $e');
+      } finally {
+        if (mounted) setState(() => _isLessonLoading = false);
+      }
     }
   }
 
@@ -136,7 +144,7 @@ class _MyClassPageState extends State<MyClassPage> {
       _selectedClassIndex = index;
       _page = 0;
       _onlineLessonInfo = null;
-      _workbookDetail = null;
+      _workbookLecture = null;
       _workbookRangeIndex = 0;
       _isInfoOpen = false;
     });
@@ -247,7 +255,13 @@ class _MyClassPageState extends State<MyClassPage> {
                     child: Center(
                         child: CircularProgressIndicator(color: _kBlue)))
                 : _buildOnlineLessonList(),
-          if (_currentType == 'workbook') _buildWorkbookContent(),
+          if (_currentType == 'workbook')
+            _isLessonLoading
+                ? const SizedBox(
+                    height: 200,
+                    child: Center(
+                        child: CircularProgressIndicator(color: _kPurple)))
+                : _buildWorkbookContent(),
         ],
       ),
     );
@@ -521,14 +535,15 @@ class _MyClassPageState extends State<MyClassPage> {
   static const _kRangeSize = 50;
 
   Widget _buildWorkbookContent() {
-    final detail = _workbookDetail;
+    final detail = _workbookLecture;
     if (detail == null) return const SizedBox.shrink();
 
-    final total = detail.problems.length;
+    final videos = detail.videos;
+    final total = videos.length;
     final rangeCount = (total / _kRangeSize).ceil();
     final rangeStart = _workbookRangeIndex * _kRangeSize;
     final rangeEnd = min(rangeStart + _kRangeSize, total);
-    final visible = detail.problems.sublist(rangeStart, rangeEnd);
+    final visible = videos.sublist(rangeStart, rangeEnd);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -552,7 +567,7 @@ class _MyClassPageState extends State<MyClassPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                detail.title,
+                detail.lectureName,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -561,7 +576,7 @@ class _MyClassPageState extends State<MyClassPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                detail.description,
+                detail.description ?? '',
                 style: const TextStyle(
                   fontSize: 13,
                   color: Color(0xFF6B7280),
@@ -649,7 +664,10 @@ class _MyClassPageState extends State<MyClassPage> {
               childAspectRatio: 1,
             ),
             itemCount: visible.length,
-            itemBuilder: (_, i) => _ProblemCell(problem: visible[i]),
+            itemBuilder: (_, i) => _ProblemCell(
+              video: visible[i],
+              lectureName: detail.lectureName,
+            ),
           ),
         ),
       ],
@@ -1000,15 +1018,20 @@ class _CourseTypeBadge extends StatelessWidget {
 
 // ── 문제집 문항 셀 ─────────────────────────────────────────
 class _ProblemCell extends StatelessWidget {
-  final WorkbookProblem problem;
-  const _ProblemCell({required this.problem});
+  final WorkbookVideo video;
+  final String lectureName;
+  const _ProblemCell({required this.video, required this.lectureName});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // TODO: 풀이 영상 페이지 연결
-      },
+      onTap: () => context.push(
+        Uri(path: '/workbook-video', queryParameters: {
+          'videoPath': video.path,
+          'lectureName': lectureName,
+          'problemNumber': '${video.problemNumber}',
+        }).toString(),
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFF5F3FF),
@@ -1019,7 +1042,7 @@ class _ProblemCell extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '${problem.problemNumber}',
+              '${video.problemNumber}',
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
