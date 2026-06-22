@@ -5,7 +5,6 @@ import '../services/storage_service.dart';
 
 class WorkbookApi {
   static const _testPapers = '/test-papers';
-  static const _lectures = '/test-papers/lectures';
 
   static Future<List<Course>> getWorkbookCourses() async {
     final token = await StorageService.getAccessToken();
@@ -24,11 +23,11 @@ class WorkbookApi {
     }).toList();
   }
 
-  static Future<WorkbookLecture?> getWorkbookLecture(int lectureId) async {
+  static Future<WorkbookLecture?> getWorkbookLecture(int testPaperId) async {
     final token = await StorageService.getAccessToken();
     try {
       final data = await ApiClient.get(
-        '$_lectures/$lectureId',
+        '$_testPapers/$testPaperId/lecture',
         headers: {'Authorization': 'Bearer $token'},
       );
       return WorkbookLecture.fromJson(data);

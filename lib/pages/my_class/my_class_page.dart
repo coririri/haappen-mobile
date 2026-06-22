@@ -532,18 +532,19 @@ class _MyClassPageState extends State<MyClassPage> {
   }
 
   // ── 문제집 강의 ───────────────────────────────────────────
-  static const _kRangeSize = 50;
+  static const _kRangeSize = 100;
 
   Widget _buildWorkbookContent() {
     final detail = _workbookLecture;
     if (detail == null) return const SizedBox.shrink();
 
     final videos = detail.videos;
-    final total = videos.length;
-    final rangeCount = (total / _kRangeSize).ceil();
-    final rangeStart = _workbookRangeIndex * _kRangeSize;
-    final rangeEnd = min(rangeStart + _kRangeSize, total);
-    final visible = videos.sublist(rangeStart, rangeEnd);
+    final videoMap = {for (final v in videos) v.problemNumber: v};
+    final maxNum = videos.isEmpty ? 0 : videos.map((v) => v.problemNumber).reduce(max);
+    final rangeCount = maxNum == 0 ? 0 : (maxNum / _kRangeSize).ceil();
+    final rangeStart = _workbookRangeIndex * _kRangeSize + 1;
+    final rangeEnd = min((_workbookRangeIndex + 1) * _kRangeSize, maxNum);
+    final itemCount = max(0, rangeEnd - rangeStart + 1);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -585,7 +586,7 @@ class _MyClassPageState extends State<MyClassPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                '총 $total문항',
+                '총 ${videos.length}문항 (${maxNum}번까지)',
                 style: const TextStyle(
                   fontSize: 12,
                   color: _kPurple,
@@ -603,7 +604,7 @@ class _MyClassPageState extends State<MyClassPage> {
             child: Row(
               children: List.generate(rangeCount, (i) {
                 final s = i * _kRangeSize + 1;
-                final e = min((i + 1) * _kRangeSize, total);
+                final e = min((i + 1) * _kRangeSize, maxNum);
                 final selected = i == _workbookRangeIndex;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
@@ -658,16 +659,20 @@ class _MyClassPageState extends State<MyClassPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 5,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+              crossAxisCount: 8,
+              crossAxisSpacing: 6,
+              mainAxisSpacing: 6,
               childAspectRatio: 1,
             ),
-            itemCount: visible.length,
-            itemBuilder: (_, i) => _ProblemCell(
-              video: visible[i],
-              lectureName: detail.lectureName,
-            ),
+            itemCount: itemCount,
+            itemBuilder: (_, i) {
+              final num = rangeStart + i;
+              return _ProblemCell(
+                video: videoMap[num],
+                problemNumber: num,
+                lectureName: detail.lectureName,
+              );
+            },
           ),
         ),
       ],
@@ -1018,39 +1023,55 @@ class _CourseTypeBadge extends StatelessWidget {
 
 // ── 문제집 문항 셀 ─────────────────────────────────────────
 class _ProblemCell extends StatelessWidget {
-  final WorkbookVideo video;
+  final WorkbookVideo? video;
+  final int problemNumber;
   final String lectureName;
-  const _ProblemCell({required this.video, required this.lectureName});
+  const _ProblemCell({
+    required this.video,
+    required this.problemNumber,
+    required this.lectureName,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final enabled = video != null;
     return GestureDetector(
-      onTap: () => context.push(
-        Uri(path: '/workbook-video', queryParameters: {
-          'videoPath': video.path,
-          'lectureName': lectureName,
-          'problemNumber': '${video.problemNumber}',
-        }).toString(),
-      ),
+      onTap: enabled
+          ? () => context.push(
+                Uri(path: '/workbook-video', queryParameters: {
+                  'videoPath': video!.path,
+                  'lectureName': lectureName,
+                  'problemNumber': '$problemNumber',
+                }).toString(),
+              )
+          : null,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F3FF),
+          color: enabled ? const Color(0xFFF5F3FF) : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFDDD6FE)),
+          border: Border.all(
+            color: enabled ? const Color(0xFFDDD6FE) : const Color(0xFFE2E8F0),
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '${video.problemNumber}',
-              style: const TextStyle(
-                fontSize: 15,
+              '$problemNumber',
+              style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF374151),
+                color: enabled
+                    ? const Color(0xFF374151)
+                    : const Color(0xFFCBD5E1),
               ),
             ),
-            const SizedBox(height: 4),
-            const Icon(Icons.play_circle_outline, size: 18, color: _kPurple),
+            const SizedBox(height: 2),
+            Icon(
+              Icons.play_circle_outline,
+              size: 13,
+              color: enabled ? _kPurple : const Color(0xFFCBD5E1),
+            ),
           ],
         ),
       ),
