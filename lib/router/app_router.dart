@@ -10,6 +10,7 @@ import 'package:haanppen_mobile/pages/question_board/question_board_page.dart';
 import 'package:haanppen_mobile/pages/write_question/write_question_page.dart';
 import 'package:haanppen_mobile/pages/question_detail/question_detail_page.dart';
 import 'package:haanppen_mobile/pages/online_lesson/online_lesson_page.dart';
+import 'package:haanppen_mobile/pages/workbook_video/workbook_video_page.dart';
 import 'package:haanppen_mobile/pages/user_information/user_information_page.dart';
 import 'package:haanppen_mobile/services/auth_service.dart';
 
@@ -86,6 +87,15 @@ final appRouter = GoRouter(
         onlineCourseId: int.tryParse(state.uri.queryParameters['onlineCourseId'] ?? '') ?? 0,
         videoId: int.tryParse(state.uri.queryParameters['videoId'] ?? '') ?? 0,
         courseName: state.uri.queryParameters['courseName'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/workbook-video',
+      builder: (context, state) => WorkbookVideoPage(
+        videoPath: state.uri.queryParameters['videoPath'] ?? '',
+        lectureName: state.uri.queryParameters['lectureName'] ?? '',
+        problemNumber:
+            int.tryParse(state.uri.queryParameters['problemNumber'] ?? '') ?? 0,
       ),
     ),
     GoRoute(
